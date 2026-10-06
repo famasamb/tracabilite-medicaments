@@ -1,9 +1,9 @@
 """Formes des donnees echangees avec l'API (ce que l'application envoie et recoit)."""
-from datetime import date
+from datetime import date, datetime
 
 from pydantic import BaseModel, Field
 
-from .models import Role, TypeStructure
+from .models import Role, TypeOperation, TypeStructure
 
 
 class StructureEntree(BaseModel):
@@ -95,3 +95,14 @@ class ProduitResume(BaseModel):
     laboratoire: str
     formePharmaceutique: str
     conditionnement: str
+
+
+class EvenementSortie(BaseModel):
+    id: str
+    numeroSerie: str
+    typeOperation: TypeOperation
+    dateHeure: datetime
+    latitude: float | None
+    longitude: float | None
+    alerte: bool
+    message: str
