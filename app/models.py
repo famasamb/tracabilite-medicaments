@@ -1,7 +1,7 @@
 import enum
 import uuid
 from datetime import date, datetime, timezone
-from sqlalchemy import String, Integer, Date, DateTime, Enum, ForeignKey, Index, UniqueConstraint, text
+from sqlalchemy import String, Integer, Float, Boolean, Date, DateTime, Enum, ForeignKey, Index, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .db import Base
 
@@ -34,6 +34,19 @@ class Role(str, enum.Enum):
 class StatutUnite(str, enum.Enum):
     active = "active"
     desactivee = "desactivee"
+
+
+class TypeOperation(str, enum.Enum):
+    reception = "reception"
+    expedition = "expedition"
+    dispensation = "dispensation"
+
+
+class TypeAnomalie(str, enum.Enum):
+    reutilisationIdentifiant = "reutilisationIdentifiant"
+    ruptureSequence = "ruptureSequence"
+    trajetInhabituel = "trajetInhabituel"
+    concentrationInhabituelle = "concentrationInhabituelle"
 
 
 # ---------- Classes ----------
@@ -69,6 +82,9 @@ class Utilisateur(Base):
     # Association "employer" : un utilisateur appartient a une seule structure
     structure_id: Mapped[str] = mapped_column(ForeignKey("structures.id"))
     structure: Mapped[Structure] = relationship(back_populates="utilisateurs")
+
+    # Association "enregistrer" : un utilisateur enregistre plusieurs evenements
+    evenements: Mapped[list["Evenement"]] = relationship(back_populates="utilisateur")
 
     __table_args__ = (
         # Regle du diagramme: un seul responsable par structure
@@ -123,3 +139,42 @@ class Unite(Base):
 
     lot_id: Mapped[str] = mapped_column(ForeignKey("lots.id"), index=True)
     lot: Mapped[Lot] = relationship(back_populates="unites")
+
+    # Association "avoir pour historique" : une unite a plusieurs evenements
+    evenements: Mapped[list["Evenement"]] = relationship(
+        back_populates="unite", order_by="Evenement.dateHeure")
+
+
+class Evenement(Base):
+    __tablename__ = "evenements"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    typeOperation: Mapped[TypeOperation] = mapped_column(Enum(TypeOperation))
+    dateHeure: Mapped[datetime] = mapped_column(DateTime, default=maintenant)
+    latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    synchronise: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    # Association "avoir pour historique" : un evenement concerne une seule unite
+    numeroSerie: Mapped[str] = mapped_column(ForeignKey("unites.numeroSerie"), index=True)
+    unite: Mapped[Unite] = relationship(back_populates="evenements")
+
+    # Association "enregistrer" : un evenement est enregistre par un seul utilisateur
+    utilisateur_id: Mapped[str] = mapped_column(ForeignKey("utilisateurs.id"))
+    utilisateur: Mapped[Utilisateur] = relationship(back_populates="evenements")
+
+    # Association "reveler" : un evenement peut reveler plusieurs anomalies
+    anomalies: Mapped[list["Anomalie"]] = relationship(back_populates="evenement")
+
+
+class Anomalie(Base):
+    __tablename__ = "anomalies"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    typeAnomalie: Mapped[TypeAnomalie] = mapped_column(Enum(TypeAnomalie))
+    score: Mapped[float] = mapped_column(Float)
+    dateDetection: Mapped[datetime] = mapped_column(DateTime, default=maintenant)
+    statut: Mapped[str] = mapped_column(String(50), default="a_verifier")  # valeurs a definir plus tard
+
+    evenement_id: Mapped[str] = mapped_column(ForeignKey("evenements.id"), index=True)
+    evenement: Mapped[Evenement] = relationship(back_populates="anomalies")
