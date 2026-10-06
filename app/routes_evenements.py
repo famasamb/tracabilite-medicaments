@@ -30,6 +30,32 @@ def extraire_numero_serie(texte: str) -> str | None:
     return trouve.group(1) if trouve else None
 
 
+async def obtenir_unite(db: Session, image: UploadFile | None, numero_serie: str | None) -> Unite:
+    """Lit le code sur l'image (methode classique); si elle echoue, utilise la saisie manuelle.
+
+    Renvoie l'unite trouvee dans la base centrale, ou refuse la requete avec un message clair.
+    """
+    saisie = numero_serie.strip() if numero_serie else None
+    identifiant = None
+    if image is not None:
+        contenu = await image.read(TAILLE_MAX_IMAGE + 1)
+        if len(contenu) > TAILLE_MAX_IMAGE:
+            raise HTTPException(413, "Image trop volumineuse (5 Mo maximum).")
+        texte = lire_code(contenu)
+        identifiant = extraire_numero_serie(texte) if texte else None
+    if identifiant is None:
+        identifiant = saisie
+    if identifiant is None:
+        if image is None:
+            raise HTTPException(422, "Envoyez l'image du code ou saisissez le numero de serie.")
+        raise HTTPException(422, "Code illisible. Reprenez la photo ou saisissez le numero de serie.")
+
+    unite = db.get(Unite, identifiant)
+    if unite is None:
+        raise HTTPException(404, "Identifiant inconnu: aucune unite serialisee avec ce numero.")
+    return unite
+
+
 @router.post("", response_model=EvenementSortie, status_code=201)
 async def enregistrer_evenement(
         typeOperation: TypeOperation = Form(description="reception ou expedition"),
@@ -47,26 +73,8 @@ async def enregistrer_evenement(
     if (latitude is None) != (longitude is None):
         raise HTTPException(422, "Fournissez la latitude et la longitude ensemble, ou aucune des deux.")
 
-    # Etapes 1 et 2: lecture du code sur l'image; si elle echoue, saisie manuelle (variante 2c)
-    saisie = numeroSerie.strip() if numeroSerie else None
-    identifiant = None
-    if image is not None:
-        contenu = await image.read(TAILLE_MAX_IMAGE + 1)
-        if len(contenu) > TAILLE_MAX_IMAGE:
-            raise HTTPException(413, "Image trop volumineuse (5 Mo maximum).")
-        texte = lire_code(contenu)
-        identifiant = extraire_numero_serie(texte) if texte else None
-    if identifiant is None:
-        identifiant = saisie
-    if identifiant is None:
-        if image is None:
-            raise HTTPException(422, "Envoyez l'image du code ou saisissez le numero de serie.")
-        raise HTTPException(422, "Code illisible. Reprenez la photo ou saisissez le numero de serie.")
-
-    # Etape 3: verification du statut dans la base centrale
-    unite = db.get(Unite, identifiant)
-    if unite is None:
-        raise HTTPException(404, "Identifiant inconnu: aucune unite serialisee avec ce numero.")
+    # Etapes 1 a 3: lecture du code (ou saisie manuelle), puis verification dans la base centrale
+    unite = await obtenir_unite(db, image, numeroSerie)
 
     # Etapes 4 et 5: construction et enregistrement de l'evenement
     evenement = Evenement(typeOperation=typeOperation, latitude=latitude, longitude=longitude,

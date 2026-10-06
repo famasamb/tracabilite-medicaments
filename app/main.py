@@ -9,6 +9,7 @@ from .routes_employes import router as routeur_employes
 from .routes_produits import router as routeur_produits
 from .routes_lots import router as routeur_lots
 from .routes_evenements import router as routeur_evenements
+from .routes_dispensations import router as routeur_dispensations
 from . import models  # noqa: F401  (charge les classes pour creer les tables)
 
 
@@ -32,6 +33,7 @@ app.include_router(routeur_employes)
 app.include_router(routeur_produits)
 app.include_router(routeur_lots)
 app.include_router(routeur_evenements)
+app.include_router(routeur_dispensations)
 
 
 @app.get("/sante", tags=["Systeme"])
