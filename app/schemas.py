@@ -133,3 +133,37 @@ class SRSortie(BaseModel):
     nom: str
     localisation: str
     aUnResponsable: bool
+
+
+class FiltreTableau(BaseModel):
+    srId: str | None
+    du: date | None
+    au: date | None
+
+
+class PointCarte(BaseModel):
+    latitude: float
+    longitude: float
+    typeOperation: TypeOperation
+    dateHeure: datetime
+    sr: str
+
+
+class AlerteRecente(BaseModel):
+    typeAnomalie: TypeAnomalie
+    statut: str
+    dateDetection: datetime
+    sr: str
+    numeroSerie: str
+
+
+class TableauDeBordSortie(BaseModel):
+    avertissement: str
+    filtre: FiltreTableau
+    message: str | None
+    nombreEvenements: int
+    unitesSuivies: int
+    anomaliesSignalees: int
+    anomaliesParType: dict[str, int]
+    pointsCarte: list[PointCarte]
+    alertesRecentes: list[AlerteRecente]
