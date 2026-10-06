@@ -8,6 +8,7 @@ from .models import Role, Structure, TypeStructure, Utilisateur
 from .references import trouver_reference
 from .schemas import InscriptionEntree, InscriptionSortie
 from .securite import hacher_mot_de_passe
+from .sr import creer_sr
 
 router = APIRouter(prefix="/structures", tags=["Inscription"])
 
@@ -41,6 +42,8 @@ def s_inscrire(donnees: InscriptionEntree, db: Session = Depends(get_db)):
                               motDePasse=hacher_mot_de_passe(r.motDePasse),
                               role=Role.responsable, structure=structure)
     db.add_all([structure, responsable])
+    if s.type == TypeStructure.PNA:
+        db.add_all(creer_sr(structure))  # la PNA recoit ses SR, qui ne s'inscrivent pas eux-memes
     try:
         db.commit()
     except IntegrityError:

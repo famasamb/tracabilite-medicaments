@@ -126,3 +126,10 @@ class StatutUniteSortie(BaseModel):
     statut: StatutUnite
     dernierEvenement: DernierEvenement | None
     anomalie: AnomalieAssociee | None
+
+
+class SRSortie(BaseModel):
+    id: str
+    nom: str
+    localisation: str
+    aUnResponsable: bool
