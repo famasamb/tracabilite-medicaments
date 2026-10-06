@@ -58,3 +58,22 @@ class EmployeSortie(BaseModel):
     identifiantConnexion: str
     structure_id: str
     message: str
+
+
+class ProduitEntree(BaseModel):
+    nom: str = Field(min_length=2, max_length=200)
+    composition: str = Field(min_length=2, max_length=500)
+    formePharmaceutique: str = Field(min_length=2, max_length=100)
+    conditionnement: str = Field(min_length=2, max_length=200)
+    gtin: str | None = Field(default=None, description="Facultatif: 14 chiffres, cle de controle valide")
+
+
+class ProduitSortie(BaseModel):
+    id: str
+    gtin: str | None
+    nom: str
+    laboratoire: str
+    composition: str
+    formePharmaceutique: str
+    conditionnement: str
+    message: str

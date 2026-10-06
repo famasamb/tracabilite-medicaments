@@ -8,7 +8,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from .db import get_db
-from .models import Role, Utilisateur
+from .models import Role, TypeStructure, Utilisateur
 
 # En production, definir la variable d'environnement CLE_SECRETE avec une longue valeur aleatoire
 CLE_SECRETE = os.getenv("CLE_SECRETE", "cle-de-developpement-a-changer-en-production")
@@ -43,4 +43,11 @@ def responsable_courant(utilisateur: Utilisateur = Depends(utilisateur_courant))
     """Comme utilisateur_courant, mais reserve au role responsable (403 pour un employe)."""
     if utilisateur.role != Role.responsable:
         raise HTTPException(403, "Action reservee au responsable de la structure.")
+    return utilisateur
+
+
+def fabricant_courant(utilisateur: Utilisateur = Depends(utilisateur_courant)) -> Utilisateur:
+    """Comme utilisateur_courant, mais reserve aux utilisateurs d'une structure de type fabricant."""
+    if utilisateur.structure.type != TypeStructure.fabricant:
+        raise HTTPException(403, "Action reservee aux fabricants.")
     return utilisateur
