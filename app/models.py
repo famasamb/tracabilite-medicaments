@@ -178,3 +178,15 @@ class Anomalie(Base):
 
     evenement_id: Mapped[str] = mapped_column(ForeignKey("evenements.id"), index=True)
     evenement: Mapped[Evenement] = relationship(back_populates="anomalies")
+    
+    
+class ReferenceAutorisation(Base):
+    """Base de reference des autorisations officielles (donnees importees, pas une classe du domaine).
+
+    Elle sert a verifier la reference saisie lors de l'inscription d'une structure.
+    """
+    __tablename__ = "references_autorisation"
+
+    reference: Mapped[str] = mapped_column(String(100), primary_key=True)
+    nom: Mapped[str] = mapped_column(String(200))
+    type: Mapped[TypeStructure] = mapped_column(Enum(TypeStructure))

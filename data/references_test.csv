@@ -1,0 +1,5 @@
+reference,nom,type
+TEST-FAB-001,Laboratoire Test Fabricant,fabricant
+TEST-GRO-001,Grossiste Test Repartiteur,grossisteRepartiteur
+TEST-OFF-001,Pharmacie Test Centrale,officine
+TEST-PNA-001,Pharmacie Nationale d'Approvisionnement (test),PNA
