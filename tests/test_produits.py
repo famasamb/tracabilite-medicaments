@@ -69,3 +69,37 @@ def test_une_officine_ne_peut_pas_enregistrer_de_produit(client):
 
 def test_sans_connexion_refuse(client):
     assert client.post("/produits", json=PRODUIT).status_code == 401
+
+
+def test_recherche_par_nom_et_par_gtin(client):
+    inscrire(client)
+    entete = connecte(client)
+    client.post("/produits", json=dict(PRODUIT, gtin=GTIN_VALIDE), headers=entete)
+    client.post("/produits", json=dict(PRODUIT, nom="Amoxicilline 500 mg"), headers=entete)
+    par_nom = client.get("/produits", params={"q": "parace"}, headers=entete).json()
+    assert [p["nom"] for p in par_nom] == ["Paracetamol 500 mg"]
+    par_gtin = client.get("/produits", params={"q": GTIN_VALIDE}, headers=entete).json()
+    assert len(par_gtin) == 1 and par_gtin[0]["gtin"] == GTIN_VALIDE
+    assert client.get("/produits", params={"q": "introuvable"}, headers=entete).json() == []
+
+
+def test_la_recherche_ne_montre_que_les_produits_de_son_laboratoire(client):
+    from app.db import get_db
+    from app.main import app as application
+    from app.models import ReferenceAutorisation, TypeStructure
+    inscrire(client)
+    client.post("/produits", json=PRODUIT, headers=connecte(client))
+    db = next(application.dependency_overrides[get_db]())
+    db.add(ReferenceAutorisation(reference="TEST-FAB-002", nom="Autre labo", type=TypeStructure.fabricant))
+    db.commit()
+    client.post("/structures/inscription", json={
+        "structure": {"nom": "Autre Laboratoire", "type": "fabricant", "localisation": "Thies",
+                      "referenceAutorisation": "TEST-FAB-002"},
+        "responsable": {"nom": "Ibrahima Sow", "fonction": "Pharmacien", "identifiantConnexion": "labo2",
+                        "motDePasse": "MotDePasse2026"}})
+    r = client.get("/produits", params={"q": "parace"}, headers=connecte(client, "labo2"))
+    assert r.json() == []
+
+
+def test_recherche_reservee_aux_fabricants_et_connectes(client):
+    assert client.get("/produits", params={"q": "parace"}).status_code == 401

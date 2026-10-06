@@ -1,4 +1,6 @@
 """Formes des donnees echangees avec l'API (ce que l'application envoie et recoit)."""
+from datetime import date
+
 from pydantic import BaseModel, Field
 
 from .models import Role, TypeStructure
@@ -77,3 +79,19 @@ class ProduitSortie(BaseModel):
     formePharmaceutique: str
     conditionnement: str
     message: str
+
+
+class LotEntree(BaseModel):
+    produit_id: str = Field(min_length=1, max_length=32)
+    numeroLot: str = Field(min_length=1, max_length=20, pattern=r"^[^()]+$")
+    datePeremption: date
+    quantite: int = Field(gt=0, le=10000, description="Nombre d'unites a serialiser (10 000 maximum par lot)")
+
+
+class ProduitResume(BaseModel):
+    id: str
+    gtin: str | None
+    nom: str
+    laboratoire: str
+    formePharmaceutique: str
+    conditionnement: str
