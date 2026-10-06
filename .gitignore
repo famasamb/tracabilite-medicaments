@@ -221,3 +221,6 @@ __marimo__/
 
 # Reglages de l'editeur
 .vscode/
+
+# Base de donnees locale
+*.db
