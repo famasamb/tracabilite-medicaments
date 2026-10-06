@@ -1,7 +1,7 @@
 """Formes des donnees echangees avec l'API (ce que l'application envoie et recoit)."""
 from pydantic import BaseModel, Field
 
-from .models import TypeStructure
+from .models import Role, TypeStructure
 
 
 class StructureEntree(BaseModel):
@@ -27,3 +27,18 @@ class InscriptionSortie(BaseModel):
     structure_id: str
     utilisateur_id: str
     message: str
+    
+    
+class JetonSortie(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+class ProfilSortie(BaseModel):
+    id: str
+    nom: str
+    fonction: str
+    role: Role
+    structure_id: str
+    structure_nom: str
+    structure_type: TypeStructure

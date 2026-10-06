@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from .db import Base, engine
 from .routes_inscription import router as routeur_inscription
+from .routes_auth import router as routeur_auth
 from . import models  # noqa: F401  (charge les classes pour creer les tables)
 
 
@@ -22,6 +23,7 @@ app = FastAPI(
 )
 
 app.include_router(routeur_inscription)
+app.include_router(routeur_auth)
 
 
 @app.get("/sante", tags=["Systeme"])
