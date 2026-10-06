@@ -58,7 +58,7 @@ class Structure(Base):
     nom: Mapped[str] = mapped_column(String(200))
     type: Mapped[TypeStructure] = mapped_column(Enum(TypeStructure))
     localisation: Mapped[str] = mapped_column(String(200))
-    referenceAutorisation: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    referenceAutorisation: Mapped[str | None] = mapped_column(String(100), unique=True, nullable=True)
 
     # Association reflexive "rattacher a" : mere 0..1 / filiales 0..*
     mere_id: Mapped[str | None] = mapped_column(ForeignKey("structures.id"), nullable=True)

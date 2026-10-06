@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from .db import Base, engine
+from .routes_inscription import router as routeur_inscription
 from . import models  # noqa: F401  (charge les classes pour creer les tables)
 
 
@@ -19,6 +20,8 @@ app = FastAPI(
     version="0.1.0",
     lifespan=demarrage,
 )
+
+app.include_router(routeur_inscription)
 
 
 @app.get("/sante", tags=["Systeme"])
