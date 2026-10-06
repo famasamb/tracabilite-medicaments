@@ -1,5 +1,6 @@
 import os
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
 # Adresse de la base. Par defaut: un fichier SQLite dans le dossier du projet.
@@ -12,6 +13,17 @@ options = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else
 
 # Le "moteur" est l'objet qui parle a la base
 engine = create_engine(DATABASE_URL, connect_args=options)
+
+
+@event.listens_for(Engine, "connect")
+def activer_cles_etrangeres(connexion, _):
+    """SQLite n'applique pas les cles etrangeres par defaut: on l'active.
+    (PostgreSQL les applique toujours.)"""
+    if connexion.__class__.__module__.startswith("sqlite3"):
+        curseur = connexion.cursor()
+        curseur.execute("PRAGMA foreign_keys=ON")
+        curseur.close()
+
 
 # Une "session" est une conversation avec la base (lire, ecrire, valider)
 SessionLocal = sessionmaker(bind=engine, autoflush=False)
