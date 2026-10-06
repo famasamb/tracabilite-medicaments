@@ -3,7 +3,7 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, Field
 
-from .models import Role, TypeOperation, TypeStructure
+from .models import Role, StatutUnite, TypeAnomalie, TypeOperation, TypeStructure
 
 
 class StructureEntree(BaseModel):
@@ -106,3 +106,23 @@ class EvenementSortie(BaseModel):
     longitude: float | None
     alerte: bool
     message: str
+
+
+class DernierEvenement(BaseModel):
+    typeOperation: TypeOperation
+    dateHeure: datetime
+    latitude: float | None
+    longitude: float | None
+
+
+class AnomalieAssociee(BaseModel):
+    typeAnomalie: TypeAnomalie
+    statut: str
+    dateDetection: datetime
+
+
+class StatutUniteSortie(BaseModel):
+    numeroSerie: str
+    statut: StatutUnite
+    dernierEvenement: DernierEvenement | None
+    anomalie: AnomalieAssociee | None
