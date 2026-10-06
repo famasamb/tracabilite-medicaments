@@ -42,3 +42,19 @@ class ProfilSortie(BaseModel):
     structure_id: str
     structure_nom: str
     structure_type: TypeStructure
+    
+    
+class EmployeEntree(BaseModel):
+    nom: str = Field(min_length=2, max_length=200)
+    fonction: str = Field(min_length=2, max_length=100)
+    identifiantConnexion: str = Field(min_length=3, max_length=100)
+    motDePasse: str = Field(min_length=8, max_length=128)
+
+
+class EmployeSortie(BaseModel):
+    id: str
+    nom: str
+    fonction: str
+    identifiantConnexion: str
+    structure_id: str
+    message: str
