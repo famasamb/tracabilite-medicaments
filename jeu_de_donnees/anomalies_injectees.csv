@@ -1,0 +1,187 @@
+typeAnomalie,evenement_id,numeroSerie,dateHeure,structure,ville,description
+reutilisationIdentifiant,9f7540cf73a24f08af9665e5742de2b4,Y5T4UJT2GG7Q,2026-10-05 08:06:00,Officine off.diourbel1,Diourbel,"unite deja dispensee a Thies, scannee a nouveau a Diourbel"
+reutilisationIdentifiant,6cb6082957c6410693369168db4d731c,RNEGUP8DQNPV,2026-09-01 08:39:00,Officine off.diourbel1,Diourbel,"unite deja dispensee a Ziguinchor, scannee a nouveau a Diourbel"
+reutilisationIdentifiant,0e1f8b2ee81b4fa3949ffb14027aaf25,92C5B72MSP8Y,2026-10-03 09:02:44.532098,Officine off.kaolack1,Kaolack,"unite deja dispensee a Ziguinchor, scannee a nouveau a Kaolack"
+reutilisationIdentifiant,5e4ca49929e24bb28f2531e2c6f55e44,B5H8VBB2W5Q2,2026-09-21 08:03:00,Officine off.louga1,Louga,"unite deja dispensee a Thies, scannee a nouveau a Louga"
+reutilisationIdentifiant,aae28a1f399c41c2b6827a6d657b3bed,PXZ3Y7VGYFA7,2026-10-05 10:46:44.742223,Officine off.dakar3,Dakar,"unite deja dispensee a Kaolack, scannee a nouveau a Dakar"
+reutilisationIdentifiant,61da2971b00b4702a78b32d27cd9f74b,3MCG8V5EPFK9,2026-09-05 08:54:45.867841,Officine off.thies1,Thies,"unite deja dispensee a Louga, scannee a nouveau a Thies"
+reutilisationIdentifiant,7ea364f4c25d4b3facc6dc4348cfc5f2,7JKUHS2TZ57Z,2026-09-13 08:15:00,Officine off.diourbel1,Diourbel,"unite deja dispensee a Kaolack, scannee a nouveau a Diourbel"
+reutilisationIdentifiant,9240da1f0b52476aa425953393b629cd,G9DQTZAYYZJJ,2026-09-07 12:04:40.351888,Officine off.ziguinchor1,Ziguinchor,"unite deja dispensee a Louga, scannee a nouveau a Ziguinchor"
+reutilisationIdentifiant,adbb29b9b4c04550ab44ed2a92af5072,WDKXWFX7EWBM,2026-08-19 09:29:00,Officine off.dakar2,Dakar,"unite deja dispensee a Saint-Louis, scannee a nouveau a Dakar"
+reutilisationIdentifiant,c7c897843bac46ea88783136c43cc2e5,MPRCTK3REBXV,2026-09-25 08:07:00,Officine off.thies2,Thies,"unite deja dispensee a Kaolack, scannee a nouveau a Thies"
+reutilisationIdentifiant,b6d7bfccedfc44df872b232fc3f9657a,G2VXEEB7AQPJ,2026-09-05 08:48:00,Officine off.ziguinchor1,Ziguinchor,"unite deja dispensee a Saint-Louis, scannee a nouveau a Ziguinchor"
+reutilisationIdentifiant,ce4382e7088a4c05b976dc9ea2751517,QWZ94REGNFTQ,2026-09-16 09:15:57.582130,Officine off.dakar1,Dakar,"unite deja dispensee a Ziguinchor, scannee a nouveau a Dakar"
+ruptureSequence,e3f3193216614021a5f9ada24fc1ff30,R36HMC5669JK,2026-08-15 08:36:00,Officine off.diourbel1,Diourbel,dispensation a Diourbel d'une unite recue par une autre officine (Dakar)
+ruptureSequence,0fc8b688003f49dfb1706da4d177a5af,YD6R9S747UBT,2026-08-31 08:35:00,Officine off.dakar2,Dakar,dispensation a Dakar d'une unite recue par une autre officine (Thies)
+ruptureSequence,2a9e8397558e47e3a340b54607fbb116,28TNR4M6K67A,2026-08-22 08:49:00,Officine off.dakar1,Dakar,dispensation a Dakar d'une unite recue par une autre officine (Tambacounda)
+ruptureSequence,59c33a0705a84a2cbfa1c7b3b997c8c2,7CRUFDYRK3GH,2026-09-27 13:16:49.950864,Officine off.kaolack2,Kaolack,dispensation a Kaolack d'une unite recue par une autre officine (Diourbel)
+ruptureSequence,a9989820ff23471b8866381dc3659785,Y8J659RFKW9P,2026-09-26 14:43:53.744781,Officine off.saintlouis1,Saint-Louis,dispensation a Saint-Louis d'une unite recue par une autre officine (Diourbel)
+ruptureSequence,1b571f6068464d19abdc5cbab3675990,8PAEDSPY2SRE,2026-08-28 08:11:00,Officine off.kaolack1,Kaolack,dispensation a Kaolack d'une unite recue par une autre officine (Kaolack)
+ruptureSequence,692cb1078ded483cb2836652e3a62189,C4MRH5857K2X,2026-09-24 14:20:02.496302,Officine off.diourbel1,Diourbel,dispensation a Diourbel d'une unite recue par une autre officine (Dakar)
+ruptureSequence,7c2e30eaa000489480560862ea013900,X6ZHHPED424K,2026-09-23 08:41:00,Officine off.diourbel1,Diourbel,dispensation a Diourbel d'une unite recue par une autre officine (Tambacounda)
+ruptureSequence,f75cf8c7670e4c93bf525b6fe24863ad,ZYEMZCNT8K4Z,2026-09-22 14:31:58.380820,Officine off.louga1,Louga,dispensation a Louga d'une unite recue par une autre officine (Dakar)
+ruptureSequence,44d15e812a604201a6a69bc26ad0e193,VVAXDJ4VCCJU,2026-09-20 15:29:51.207370,Officine off.diourbel1,Diourbel,dispensation a Diourbel d'une unite recue par une autre officine (Kaolack)
+ruptureSequence,030d6b25f240463ab834ded6c6471b1a,AURQSXT33MZC,2026-09-12 08:08:00,Officine off.kaolack2,Kaolack,dispensation a Kaolack d'une unite recue par une autre officine (Dakar)
+ruptureSequence,59dedaec127c4a10848d61bb433fa5c7,YGQHJFNXA6BV,2026-09-26 15:02:15.531112,Officine off.kaolack2,Kaolack,dispensation a Kaolack d'une unite recue par une autre officine (Dakar)
+trajetInhabituel,0b6242ec1eeb4cae9868e9986a62aeb6,9DHGUJCZU4Q4,2026-09-23 09:39:50.307339,Officine off.tamba1,Tambacounda,"unite recue a Saint-Louis, puis a Tambacounda moins d'une heure plus tard"
+trajetInhabituel,7ec1828a40944e5dabc31a56662a55bb,AYYRYZ7M67TC,2026-09-13 09:41:16.962296,Officine off.tamba1,Tambacounda,"unite recue a Dakar, puis a Tambacounda moins d'une heure plus tard"
+trajetInhabituel,cd5fb07bb5e64524bbefcbb786c5039c,J48NTCVBXCRN,2026-09-19 08:48:37.676354,Officine off.tamba1,Tambacounda,"unite recue a Louga, puis a Tambacounda moins d'une heure plus tard"
+trajetInhabituel,90fa95613c694fada9245f4b06462ec3,6R9TSUZQ8A6Q,2026-08-26 10:07:37.983710,Officine off.dakar1,Dakar,"unite recue a Ziguinchor, puis a Dakar moins d'une heure plus tard"
+trajetInhabituel,b486473df83444ba9f01e8f7fb65c7eb,SDHF5ZV8U6XK,2026-09-08 15:44:59.542620,Officine off.saintlouis1,Saint-Louis,"unite recue a Kaolack, puis a Saint-Louis moins d'une heure plus tard"
+trajetInhabituel,910b6e4db3474725a293f7c43e793829,EFBNJRJT46AG,2026-09-15 13:07:32.789476,Officine off.thies1,Thies,"unite recue a Tambacounda, puis a Thies moins d'une heure plus tard"
+trajetInhabituel,fee3bd6537924278ac33a483edb107e0,JMNZQZ5YDMAJ,2026-09-23 08:43:40.459835,Officine off.ziguinchor1,Ziguinchor,"unite recue a Thies, puis a Ziguinchor moins d'une heure plus tard"
+trajetInhabituel,5347fe4f2aab464ca39184ac8d435489,YAY9URTXBZSQ,2026-09-01 09:43:18.413045,Officine off.ziguinchor1,Ziguinchor,"unite recue a Tambacounda, puis a Ziguinchor moins d'une heure plus tard"
+trajetInhabituel,ae79bb1b8f9940fea3ec51f0f118edd1,G2FXCM82Z3HQ,2026-08-07 15:16:09.689577,Officine off.tamba1,Tambacounda,"unite recue a Kaolack, puis a Tambacounda moins d'une heure plus tard"
+trajetInhabituel,39e95e39a2ac4e3488d067d74233bfdf,MNU44NP68BHX,2026-08-08 09:41:22.506078,Officine off.ziguinchor1,Ziguinchor,"unite recue a Louga, puis a Ziguinchor moins d'une heure plus tard"
+trajetInhabituel,32db3d1f45af47d2847536dcd06a2721,B8V4EYSH93TA,2026-08-08 09:54:07.913457,Officine off.tamba1,Tambacounda,"unite recue a Thies, puis a Tambacounda moins d'une heure plus tard"
+trajetInhabituel,c57b4600aaa84ff48219327b4720afab,SAPZ6GRKE69F,2026-09-09 08:59:05.132962,Officine off.tamba1,Tambacounda,"unite recue a Saint-Louis, puis a Tambacounda moins d'une heure plus tard"
+concentrationInhabituelle,286c82dc23374c50adc24ac95a000f0f,72SU29HRMQCM,2026-09-20 09:20:00,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,052864a002dd49f986140123cb93108e,R5RK5J8TGB7S,2026-09-20 09:20:07.391602,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,5c974b30172640f2b827e505ae67e821,YDX6CSRNE8VZ,2026-09-20 09:20:16.827182,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,64bc2c6e0b0f4717af15ae99d76c87db,8BX6HKMHGCS3,2026-09-20 09:20:26.698490,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,9be3237a69ed49928582d8bf97a8ee01,Y9MYCHMSVW4G,2026-09-20 09:20:34.355349,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,cf11c1a6e54c46d286fb7a44514a69b0,QNUV7A9EX2NR,2026-09-20 09:20:41.340810,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,d1139b98b5ea44d2a9fcda44c46577a0,F83X36YG8E8R,2026-09-20 09:20:47.553023,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,8aed069de73c470d9801d70224a0ded8,JQMUBEZS5ZQZ,2026-09-20 09:20:55.915058,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,933d16763a264d5bb63cd9837e46ac8d,2GJCYEAXTNWE,2026-09-20 09:21:06.673488,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,54a28886e2594755a468cbd7fbf70e12,V8TWCPAAD5FH,2026-09-20 09:21:21.645877,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,ba981fd4cd6d49d6bf02889cd76119bd,MZG3NFB9DGPF,2026-09-20 09:21:34.712832,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,c6223749ef05415691c515e88e8be9ef,DBB24ETMEY4D,2026-09-20 09:21:41.910811,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,5aed59563ea0447bb467b7246f9618dd,AQBEMZXUB293,2026-09-20 09:21:55.025098,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,b0d9b70a13b841e292418187ffd930c7,55H7T2FM7PYN,2026-09-20 09:22:07.350064,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,0dc60e6cb6f14bf080424a4eef072040,W4TADW4MSUCF,2026-09-20 09:22:21.948345,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,743440e823b04dd39716e6caecee4f96,UQN7B89AMFXJ,2026-09-20 09:22:31.007909,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,e1fa714c6d4145bbbf8333141bd6d9a0,ZXEWJNC9SB6E,2026-09-20 09:22:37.296207,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,85cba20717584690b9f0c21757b2726e,3WGAVV54YE4C,2026-09-20 09:22:51.190890,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,8c2b51fb47064aea82f37cb89b75c4e6,TDM5B632ZMED,2026-09-20 09:22:59.843486,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,c656ab9f31234569b91f99265e1499a0,78JZQJZDVW4V,2026-09-20 09:23:07.176824,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,3d7b0e6681db496b883d2065e4b5492f,UGX52KDF6RP4,2026-09-20 09:23:19.762814,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,a096b22b610a40ca939cf5edadcb5b23,2EK93FDHSVKU,2026-09-20 09:23:28.699684,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,691f24084f0a4a6da23b44af5a2f459d,VZCQ2R7VFVUM,2026-09-20 09:23:36.312237,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,26eb42b0277b4629bc75be9076475956,MQTFPWT7WEC3,2026-09-20 09:23:46.194253,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,6397a7d3ad0549ff99f478f87975c98e,9ZB73K22USGN,2026-09-20 09:23:56.341780,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,31923f3eaf0043f6b928c0693e693b7a,2DXSQXN9CXFB,2026-09-20 09:24:07.897779,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,00ad64bd470c4e228cf12de228e882e0,5QMRE9YZUB7A,2026-09-20 09:24:15.251117,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,2efbeac27e70484bb033d87fc02913c0,TFWFPEX7E4NQ,2026-09-20 09:24:21.651509,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,d72584cd5e754e6497ae124e6342cbca,76BD4HECHW5C,2026-09-20 09:24:28.852643,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,76db915e5ce64960b9799f2c40a60ecf,YG9PGV36Q9DN,2026-09-20 09:24:38.086492,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,c28dae9a8c01430882a7328050a014bf,7HTZYP92H24M,2026-09-20 09:24:45.367885,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,946d9df1bf4f4aed81d48b3592f76ad5,GY9ES923RQMA,2026-09-20 09:24:52.236192,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,9d7735f8502b4c1190e8b7dbe8ebc208,Y93AMPRXYRUZ,2026-09-20 09:24:58.705579,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,4b3785fe73b64902b72107dd2d0fd58d,6BE793F2BEB4,2026-09-20 09:25:11.185225,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,5a217e89ec064d52abae6f835b4192aa,TTGG2ETKECNR,2026-09-20 09:25:21.487762,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,76542b7cd50f4b1294c7a79c8d69ee0a,EX9EWVF3FKY6,2026-09-20 09:25:30.705787,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,4adfe7de7ea24d48b62a183296c5253d,CEA8VJ3WSQ4Y,2026-09-20 09:25:45.243979,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,0f214e979c4b45359319ed36a8fbfc5a,RNRZJ3CB6JTV,2026-09-20 09:25:51.854451,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,4682273a2da941b4a58872b0b4076ab7,EH4FRVPNG6DF,2026-09-20 09:26:00.779566,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,13517a68368d4fef97cbb62fe33c2df4,NBCAH6VGW9GQ,2026-09-20 09:26:09.176670,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,9606477bb0f948cb84292a8832b8090b,9UTNE7TA45J2,2026-09-20 09:26:23.001894,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,f19b13dd090e4035bce3775d9f6c413f,HFQ5RBNPJTRX,2026-09-20 09:26:31.475582,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,67e7a7cfb514413cb7efbe84c26b528e,ZFJJ5CZ8UAMU,2026-09-20 09:26:43.828634,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,4b841c39081944a7a616327b44d18ef5,6KREDGSMKFCX,2026-09-20 09:26:57.539522,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,6d9abe0b50754bfab608cdf4d332e0ed,2KCPK35KD39X,2026-09-20 09:27:11.549210,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,59a761e9ba514b1794063394a3678b39,7AZED9KC2SHM,2026-09-20 09:27:17.708616,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,5b3feb43e9dd462c90b055a0a959a17c,NWV8WSJ5A95U,2026-09-20 09:27:26.179478,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,dae34717bcf54610af4213a345a8a7b7,SGHQHFGNF6MC,2026-09-20 09:27:38.304075,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,23a622c6500b41129237caf6dcd95070,DFHHE9PDGGAR,2026-09-20 09:27:51.553757,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,d693e6cd2db1465e87d42ec00faa821d,HCWD6ZNY9WHA,2026-09-20 09:28:05.667416,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,c1b5f3ce0b7d40bbba0d5fee3d08d5e8,58MW5UZCVXTQ,2026-09-20 09:28:13.073174,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,9779499d87ba433b92a45c9ca9e4abc1,BNVKRMVB6WRC,2026-09-20 09:28:27.304279,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,f23270380cf34a09adf31b011848b00d,95GPT87QVVT6,2026-09-20 09:28:36.960630,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,040ee4c0a44946da8371923cb2570000,8VNB5VTG6YDQ,2026-09-20 09:28:47.053316,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,ca388705e03645898ab421b3cc49f049,XU7ASHG4YGV4,2026-09-20 09:28:53.375697,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,c37f03a172434b89be71ef5ddd31c10e,BYE8446ZMENS,2026-09-20 09:29:03.391457,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,00cb553736514da6ad8d743dd8871fb7,TM38KQKEUJTE,2026-09-20 09:29:15.869330,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,0f34b2eaab2e4fa6908d274b975350bc,XV5MY8RKNBNQ,2026-09-20 09:29:23.300965,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,0a9334769fad4b1b917890e21a210a7a,75W3EHUPS5BK,2026-09-20 09:29:32.767396,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,b620b6c9f5c3466eae19118ef5bde883,J2TZ2WPNCKYM,2026-09-20 09:29:41.160225,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,2bf38b6968ac4e14b42a2f2668391e47,Y5CBP4Z4GZ4P,2026-09-20 09:29:52.915647,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,9c8b59da53e3450983432bc5f69747b7,QXZDHF9YTYG8,2026-09-20 09:30:05.211946,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,b4b28f89c8d042a68e74d69d279b139b,SKUVZY8TEER9,2026-09-20 09:30:13.930768,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,9b19e6c478eb47f485cf21f7148c669a,4UPM3RP22ZUU,2026-09-20 09:30:27.473333,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,572906e4c8804810912df093549e6053,CD7AXSET5C3H,2026-09-20 09:30:42.425332,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,dced211d64fb4ac9936b5ba03098170d,9QGMZTYVKQ24,2026-09-20 09:30:49.719540,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,b7818a163239430b9ece0ddd28882b72,HPTDJ8B6C2JZ,2026-09-20 09:31:00.084744,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,c46b64bc79b34a41bf1f08991e4595e7,QEHP4JDD4EFN,2026-09-20 09:31:11.166827,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,5e127a36c9744d63ad7d266baa296253,V8WK5MAFTGMN,2026-09-20 09:31:17.995240,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,860e06fe7e294c22b2353f5bec6f5bab,82CS3XQJZRHU,2026-09-20 09:31:31.058950,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,202fd53ee93941379caddaf02bd8da32,ASGGE2U2J7MH,2026-09-20 09:31:43.792686,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,eaef5c1c41604722b8747d67924961d3,QWKXANH8UQXM,2026-09-20 09:31:58.486062,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,2cdf74c0d73d410995a885ae5296dabe,BKXNSBDNQK2Q,2026-09-20 09:32:05.553469,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,fd02706ed77b406296144a4f6008d1e0,SQC76TMH2DAN,2026-09-20 09:32:19.996575,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,de2a5ebb6662451da46c3d25bd89d59f,T9FWZG2YV77S,2026-09-20 09:32:29.169742,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,f671dc7846744af28ad2a1e52a8e711f,4YHUBAEK7E8H,2026-09-20 09:32:39.002922,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,8911e6bcf66148499f76ef2e22fd2591,WGB8XFWW2R7F,2026-09-20 09:32:47.924382,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,86613c602b07491e81db2e59981f6c9d,EPBG62DZW3JG,2026-09-20 09:32:58.100884,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,88016a0c755a4a7abd452c97133d1e8b,NTGTRYT3XQGP,2026-09-20 09:33:10.177572,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,fc76059fc22043b9b949a09c23300157,GUHNB9PKHBFR,2026-09-20 09:33:23.900079,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,2371e9906fd2483694da44cecbe52963,TJSSB8ZZPNA8,2026-09-20 09:33:32.623433,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,03f05b30e91d482fb73936611a830af0,27EX853V5TUT,2026-09-20 09:33:46.570137,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,31d481b0020d45ffb7bba390a9b1194a,5DWQ2YU4828D,2026-09-20 09:34:00.628734,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,70475b8c7cef47d2b95b20fb1573f5c3,Q8CZ69BHW6D3,2026-09-20 09:34:13.964212,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,a99bcc9891bb46f1bd678b62eb4191a9,9KXVA8MXJ8M9,2026-09-20 09:34:26.261319,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,33453800a6754350a0034941ab1e0ad7,MK8S7AB5B82T,2026-09-20 09:34:40.464928,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,40da561ec26a4c32b8eab35a1bd5a2f6,7Z54H265CFHH,2026-09-20 09:34:53.273823,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,888a1ff8292046b2a843f9813f519140,UYQYW5ENSVCP,2026-09-20 09:35:04.861196,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,be5a129ad24048f9bfb95010f37f42b2,CNPUJDP9UYXF,2026-09-20 09:35:16.258815,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,0d1a4e9007ec4710974fccbcc7bb2eda,HD4XKJP55EWT,2026-09-20 09:35:22.655912,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,a6cfbc17fc6445baa5e6c424c7bd843a,NMVR2AKCJ3A8,2026-09-20 09:35:36.273781,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,a8cb902333f940d598ac33f185cecea7,XXF2FUQ6Q7KG,2026-09-20 09:35:44.925019,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,9123f714c2d941f9835152ce15103f49,AVJ8JU5R4RP9,2026-09-20 09:35:55.951349,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,bae85f0673014d89a9b05aefbc799910,NGA2EZGUN5CZ,2026-09-20 09:36:08.164806,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,3ebefb2727b541f0b15b220ef5695ba7,BV4M3BZE5SQP,2026-09-20 09:36:19.964594,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,f08a604041e74f2aa8257276991b0923,QCDW4UEJF5BJ,2026-09-20 09:36:31.501421,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,59926832b73b49b8a22b1322dac1acde,UHAXUFQWWSRB,2026-09-20 09:36:41.490869,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,46597aa77380414cb2bd124b70e1e5de,F8B7F653J5WE,2026-09-20 09:36:53.117402,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,5c7ceee5dd1342c7b2153d7bcd894e84,U9MT8EDQRVWT,2026-09-20 09:37:06.376906,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,2fca772da4d24694bb3ed8b80bd20fde,C4J32EPD9J2P,2026-09-20 09:37:15.663308,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,15075aeae80442e586377281192c2bbc,K8XWDV6P5M5J,2026-09-20 09:37:29.517066,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,70d25cbfb5a4433e8c3ae449df6da54c,UK76SV6TUJ7V,2026-09-20 09:37:40.895655,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,3362ea59707e43e1ad7f14a570345e90,THYK7QYUDKW5,2026-09-20 09:37:50.132889,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,5ededb24197c4d4dbbb95eaef194be31,P6PNMMCFAXMT,2026-09-20 09:38:01.087069,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,358208e48ed4403c99123e55cb96ef1c,VHFVZPJQ7ZKF,2026-09-20 09:38:12.283340,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,79a855edd8ec41ca8adfc3e8da654424,YT9MQWKH7QYF,2026-09-20 09:38:23.880815,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,cb286b46400c4fe095f9de1a351a28de,XFRQHZFJMDW3,2026-09-20 09:38:35.699008,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,f95d9fb0d73e4a5bad90a7864e0221b9,SWTG74DXJ34Z,2026-09-20 09:38:42.242307,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,2a2dd83bd56d4562a31812bd15f8a5be,9WZCUDZB58QK,2026-09-20 09:38:54.616603,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,f843008f47f0469ea220a7c3c0a3bb34,BUPXU5FZJ7JJ,2026-09-20 09:39:02.843209,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,b70d5e6f4bd94f9f8614449c1b858566,UBJVS4TUYRMH,2026-09-20 09:39:09.784852,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,15df46c282754f799b507d97b6a16ac7,86ETM9A8UU9B,2026-09-20 09:39:21.897925,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,f26cb0403ecf4afab729c748046a0fc6,74BPCD2WNTJB,2026-09-20 09:39:35.158183,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,6ab631c84fc54c0dbf41df998ea86158,JU25RYP8F88A,2026-09-20 09:39:41.510173,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,b729c53f27044bfab318bfb50dcbed28,SNYRFCXPE478,2026-09-20 09:39:54.419266,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,a227b39b74c141dba9881f2dc9f8de91,VWGNBYRA5KAY,2026-09-20 09:40:07.102350,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,fff9e66727db49ecbde83f2fd86e71be,CSR3HY4MU26T,2026-09-20 09:40:13.279883,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,4b244b6ecc82488bb96472980957b9eb,MVKCWRBK77ZP,2026-09-20 09:40:23.520365,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,3fe4c0fe6bb044528d9f5b7ea11cfa4e,PF3PQXFDR5QG,2026-09-20 09:40:32.902475,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,218c3fe6e740419d83d4219a8cece0af,SYJVZXQ82MZM,2026-09-20 09:40:47.561808,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,77d9a428590747baa9af1f1e0706112b,SV8DQGXF4W3K,2026-09-20 09:40:56.370359,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,aea94caf56a045ec987dbc5c5713f918,FTAGX7ANAD9J,2026-09-20 09:41:09.859486,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,fdc2fa9e734c4541bbb27fa81918aa7b,XSDQFJCB5TZR,2026-09-20 09:41:19.421629,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,6b5a3cba388446dd839f51137bda6064,7DFREG3CDHWD,2026-09-20 09:41:28.259660,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,bcef05e75c4b4f169a187de1f84227ab,ZXMS98TBMACQ,2026-09-20 09:41:37.907355,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,17bd1047ca61491aabfc984aaf2962ec,3S482C3ZY7KM,2026-09-20 09:41:44.786189,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,540e6a20167f4d50a945b867a33c469f,38A7C94WDHZG,2026-09-20 09:41:53.407493,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,0fe433c9c8f44cb887f3c2bec176b69c,HYZRF2CPRQYQ,2026-09-20 09:42:08.232786,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,2fac8d8b01ed43b19e91132122bda850,N35JWH596RAF,2026-09-20 09:42:14.727247,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,7d8c8f22a3754efeb47f5748bf87b06d,KBDFRXQKPSSQ,2026-09-20 09:42:25.917437,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,d858bffa5f8c4d6c9ebba30727671d45,8BXUBBWN996Q,2026-09-20 09:42:36.140650,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,278524831b47496fa8d03e3ab808fed2,GQ7TUR52CG4X,2026-09-20 09:42:49.576884,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,d9ee93b1440a466089f41db969497804,E4XHS8V28AFZ,2026-09-20 09:43:02.671425,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,e0ac541a10c04aa098834dccca48b967,7AWNC8KUJ6NU,2026-09-20 09:43:10.251513,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,242805968e7849dc841d2219156c9068,ZJHZXW3PDA9Z,2026-09-20 09:43:21.809631,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,d7f1fb9cd37a4d39967c9fedc1e7eb8c,VVAF9HRS3VY9,2026-09-20 09:43:33.952751,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,5b2b6bf6c1514447ae2e8e5ef92687f7,3E25V3MMDUDP,2026-09-20 09:43:42.099239,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,75fff9009a354d92a75d1725d68aa82f,BU98XJRGDTFD,2026-09-20 09:43:49.521077,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,11a2f03a42a1404293ba04113122db70,V3CN64N5TGBN,2026-09-20 09:44:00.425419,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,6d80950e4292402b8e29f44871c3b3c5,8M7TD7UNEC6D,2026-09-20 09:44:08.079304,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,a28d6d6a67d0419eb1bc85c4755ea718,K8BNBH7X94S7,2026-09-20 09:44:22.712327,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,e26fddf3ae1e440aa800eeac91bb7355,SD5PEGMV8GAW,2026-09-20 09:44:35.872305,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,52308de98087499c8a070d5829964b47,ZSEU2WPGJ78U,2026-09-20 09:44:46.474092,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,5bdfb75940f8483fb0fadf0fd77207c2,PZSJA8HHA54B,2026-09-20 09:44:57.897249,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,cb0e9fe036e34284a60073d2a583d6dc,UBNG2MGHA7VX,2026-09-20 09:45:07.428672,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,1f374dfc9979478b9de13b259face8ef,J2GVJMAJ57XQ,2026-09-20 09:45:18.308590,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,3fceba0e928e43a3a721216416606881,W2HD6YYH358V,2026-09-20 09:45:32.973054,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,5dd5f37107d7457d8c839edf9bd2a9af,GWMNVURWV8YD,2026-09-20 09:45:43.060193,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,0d45772e78d245f5b4c5eb5067e870dd,QTNQ5WBVRAUN,2026-09-20 09:45:56.092112,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
+concentrationInhabituelle,659d25e3cdf049a29c029840faf30664,EU3BUKZGX8VC,2026-09-20 09:46:02.978363,Officine off.louga1,Louga,150 unites d'un meme lot recues d'un coup
