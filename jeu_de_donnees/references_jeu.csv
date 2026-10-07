@@ -1,0 +1,17 @@
+reference,nom,type
+JD-FAB-001,Laboratoire Historique (jeu de donnees),fabricant
+JD-GRO-001,Grossiste Dakar (jeu de donnees),grossisteRepartiteur
+JD-GRO-002,Grossiste Kaolack (jeu de donnees),grossisteRepartiteur
+JD-PNA-001,Pharmacie Nationale d'Approvisionnement (jeu de donnees),PNA
+JD-OFF-001,Officine Dakar 1 (jeu de donnees),officine
+JD-OFF-002,Officine Dakar 2 (jeu de donnees),officine
+JD-OFF-003,Officine Dakar 3 (jeu de donnees),officine
+JD-OFF-004,Officine Thies 1 (jeu de donnees),officine
+JD-OFF-005,Officine Thies 2 (jeu de donnees),officine
+JD-OFF-006,Officine Saint-Louis 1 (jeu de donnees),officine
+JD-OFF-007,Officine Kaolack 1 (jeu de donnees),officine
+JD-OFF-008,Officine Kaolack 2 (jeu de donnees),officine
+JD-OFF-009,Officine Ziguinchor 1 (jeu de donnees),officine
+JD-OFF-010,Officine Tambacounda 1 (jeu de donnees),officine
+JD-OFF-011,Officine Louga 1 (jeu de donnees),officine
+JD-OFF-012,Officine Diourbel 1 (jeu de donnees),officine
