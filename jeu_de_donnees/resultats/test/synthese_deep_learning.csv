@@ -1,0 +1,9 @@
+source,degradation,niveau,images,lues,correctes,rappel,precision,tempsMoyenMs
+synthetique,aucune,0,15,15,15,1.0,1.0,91.57
+synthetique,flou,1,15,14,14,0.9333,1.0,90.26
+synthetique,flou,2,15,7,7,0.4667,1.0,96.24
+synthetique,flou,3,15,2,2,0.1333,1.0,91.05
+synthetique,occlusion,1,15,12,12,0.8,1.0,105.84
+synthetique,occlusion,2,15,9,9,0.6,1.0,90.58
+synthetique,occlusion,3,15,0,0,0.0,,90.05
+synthetique,toutes,0,105,59,59,0.5619,1.0,93.66
