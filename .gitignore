@@ -236,3 +236,5 @@ jeu_de_donnees/historique.db
 jeu_de_donnees/historique_anomalies.db
 
 jeu_de_donnees/yolo/
+
+jeu_de_donnees/modeles/
