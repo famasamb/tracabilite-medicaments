@@ -1,4 +1,5 @@
 """Tests du moteur d'anomalies (phase 5): reutilisation, rupture de sequence, trajet inhabituel, concentration."""
+import time
 from datetime import datetime, timedelta
 
 from app.models import Anomalie, TypeAnomalie, TypeOperation, TypeStructure, Unite
@@ -15,6 +16,14 @@ T0 = datetime(2026, 9, 1, 8, 0)
 REUTILISATION, RUPTURE = TypeAnomalie.reutilisationIdentifiant, TypeAnomalie.ruptureSequence
 TRAJET = TypeAnomalie.trajetInhabituel
 DAKAR, PROCHE, ZIGUINCHOR = (14.6937, -17.4441), (14.70, -17.30), (12.5833, -16.2719)   # Dakar-Proche 16 km, Dakar-Ziguinchor 267 km
+
+
+def pause():
+    """Laisse passer assez de temps pour que deux appels de l'API aient des dates differentes.
+
+    Sous Windows l'horloge avance par pas d'environ 15 ms: sans pause, deux evenements consecutifs peuvent
+    avoir exactement la meme date, et leur ordre n'est alors plus determine (le moteur departage par identifiant)."""
+    time.sleep(0.05)
 
 
 def op(numero, type_, minutes, structure, ident=None, position=None):
@@ -125,11 +134,15 @@ def test_un_meme_evenement_peut_reveler_une_reutilisation_et_un_trajet():
 def test_le_moteur_est_d_accord_avec_les_alertes_de_l_application(client):
     """Les memes scenarios, joues par l'API puis relus par le moteur, donnent les memes anomalies."""
     serie, _, officine = preparer(client)                                   # reception par l'officine
+    pause()
     assert client.post("/dispensations", headers=officine, data={"numeroSerie": serie}).status_code == 201
+    pause()
     assert client.post("/dispensations", headers=officine, data={"numeroSerie": serie}).status_code == 409
+    pause()
     assert client.post("/evenements", headers=officine,
                        data={"typeOperation": "reception", "numeroSerie": serie}).status_code == 201
     autre = session(client).query(Unite).filter(Unite.numeroSerie != serie).first().numeroSerie
+    pause()
     assert client.post("/dispensations", headers=officine, data={"numeroSerie": autre}).status_code == 201  # rupture
 
     db = session(client)
@@ -267,7 +280,9 @@ def test_groupes_compte_une_alerte_par_structure_et_lot():
 # ---- Ecriture dans la table des anomalies ----
 def test_lancer_analyse_ne_double_pas_les_anomalies_deja_enregistrees_par_l_api(client):
     serie, _, officine = preparer(client)
+    pause()
     assert client.post("/dispensations", headers=officine, data={"numeroSerie": serie}).status_code == 201
+    pause()
     assert client.post("/dispensations", headers=officine, data={"numeroSerie": serie}).status_code == 409
     db = session(client)
     avant = db.query(Anomalie).count()
@@ -279,6 +294,7 @@ def test_lancer_analyse_ne_double_pas_les_anomalies_deja_enregistrees_par_l_api(
 def test_lancer_analyse_ecrit_les_anomalies_nouvelles_une_seule_fois(client):
     serie, _, officine = preparer(client)
     for latitude, longitude in (("14.6937", "-17.4441"), ("12.5833", "-16.2719")):   # Dakar puis Ziguinchor, a la suite
+        pause()
         assert client.post("/evenements", headers=officine, data={
             "typeOperation": "reception", "numeroSerie": serie,
             "latitude": latitude, "longitude": longitude}).status_code == 201
