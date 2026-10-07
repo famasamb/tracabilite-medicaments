@@ -224,3 +224,6 @@ __marimo__/
 
 # Base de donnees locale
 *.db
+
+jeu_de_donnees/images/
+jeu_de_donnees/donnees.db
