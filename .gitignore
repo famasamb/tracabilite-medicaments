@@ -227,3 +227,6 @@ __marimo__/
 
 jeu_de_donnees/images/
 jeu_de_donnees/donnees.db
+
+jeu_de_donnees/planche_a_imprimer.pdf
+jeu_de_donnees/planche_a_imprimer.png
