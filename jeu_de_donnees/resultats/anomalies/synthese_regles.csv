@@ -1,0 +1,5 @@
+type,injectees,signalees,vraisPositifs,faussesAlertes,manquees,precision,rappel
+reutilisationIdentifiant,12,12,12,0,0,1.0,1.0
+ruptureSequence,12,12,12,0,0,1.0,1.0
+trajetInhabituel,12,12,12,0,0,1.0,1.0
+concentrationInhabituelle,150,159,150,9,0,0.9434,1.0
