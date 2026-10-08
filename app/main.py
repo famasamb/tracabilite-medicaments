@@ -1,6 +1,9 @@
 from contextlib import asynccontextmanager
 
+from pathlib import Path
+
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from .db import Base, engine
 from .routes_auth import router as routeur_auth
@@ -40,6 +43,10 @@ app.include_router(routeur_dispensations)
 app.include_router(routeur_unites)
 app.include_router(routeur_sr)
 app.include_router(routeur_tableau)
+
+
+# Application mobile (pages web servies par l'API, a la meme adresse)
+app.mount("/mobile", StaticFiles(directory=Path(__file__).parent / "static" / "mobile", html=True), name="mobile")
 
 
 @app.get("/sante", tags=["Systeme"])
