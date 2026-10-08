@@ -1,0 +1,11 @@
+Photos reelles de la planche imprimee (etape 55)
+
+Rangement:  photos_reelles/<condition>/<numero de serie>__<n>.jpg
+  exemple:  photos_reelles/normal/59CCR54DAFX3__1.jpg
+            photos_reelles/lumiere_faible/42MPFZXYMHQV__2.jpg
+- le dossier est la condition de prise de vue (normal, penche, lumiere_faible, loin, reflet, froisse...)
+- le texte avant "__" est le numero de serie ecrit sous le code: c'est la verite terrain
+- une photo = un seul code dans le cadre
+
+Evaluation (depuis la racine du projet):
+  python -m jeu_de_donnees.evaluer_photos
