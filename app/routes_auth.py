@@ -6,8 +6,8 @@ from sqlalchemy.orm import Session
 from .auth import creer_jeton, utilisateur_courant
 from .db import get_db
 from .models import Utilisateur
-from .schemas import JetonSortie, ProfilSortie
-from .securite import verifier_mot_de_passe
+from .schemas import ChangementMotDePasse, JetonSortie, ProfilSortie
+from .securite import hacher_mot_de_passe, verifier_mot_de_passe
 
 router = APIRouter(prefix="/auth", tags=["Authentification"])
 
@@ -31,3 +31,17 @@ def mon_profil(utilisateur: Utilisateur = Depends(utilisateur_courant)):
                         role=utilisateur.role, structure_id=utilisateur.structure_id,
                         structure_nom=utilisateur.structure.nom,
                         structure_type=utilisateur.structure.type)
+
+
+@router.post("/mot-de-passe")
+def changer_mot_de_passe(donnees: ChangementMotDePasse,
+                         utilisateur: Utilisateur = Depends(utilisateur_courant),
+                         db: Session = Depends(get_db)):
+    """Chaque utilisateur change son propre mot de passe, en prouvant qu'il connait l'actuel."""
+    if not verifier_mot_de_passe(donnees.motDePasseActuel, utilisateur.motDePasse):
+        raise HTTPException(400, "Mot de passe actuel incorrect.")
+    if donnees.nouveauMotDePasse == donnees.motDePasseActuel:
+        raise HTTPException(422, "Le nouveau mot de passe doit etre different de l'actuel.")
+    utilisateur.motDePasse = hacher_mot_de_passe(donnees.nouveauMotDePasse)
+    db.commit()
+    return {"message": "Mot de passe modifie."}

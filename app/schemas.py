@@ -29,8 +29,8 @@ class InscriptionSortie(BaseModel):
     structure_id: str
     utilisateur_id: str
     message: str
-    
-    
+
+
 class JetonSortie(BaseModel):
     access_token: str
     token_type: str = "bearer"
@@ -44,8 +44,13 @@ class ProfilSortie(BaseModel):
     structure_id: str
     structure_nom: str
     structure_type: TypeStructure
-    
-    
+
+
+class ChangementMotDePasse(BaseModel):
+    motDePasseActuel: str = Field(min_length=1, max_length=128)
+    nouveauMotDePasse: str = Field(min_length=8, max_length=128)
+
+
 class EmployeEntree(BaseModel):
     nom: str = Field(min_length=2, max_length=200)
     fonction: str = Field(min_length=2, max_length=100)

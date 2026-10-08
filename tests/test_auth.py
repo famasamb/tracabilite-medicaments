@@ -64,3 +64,43 @@ def test_jeton_expire_refuse(client):
     jeton_expire = creer_jeton(utilisateur, duree=timedelta(seconds=-10))
     r = client.get("/auth/moi", headers={"Authorization": f"Bearer {jeton_expire}"})
     assert r.status_code == 401
+
+
+def changer(client, jeton, actuel, nouveau):
+    return client.post("/auth/mot-de-passe", headers={"Authorization": f"Bearer {jeton}"},
+                       json={"motDePasseActuel": actuel, "nouveauMotDePasse": nouveau})
+
+
+def test_changement_de_mot_de_passe(client):
+    inscrire(client)
+    jeton = se_connecter(client).json()["access_token"]
+    assert changer(client, jeton, "MotDePasse2026", "NouveauSecret77").status_code == 200
+    assert se_connecter(client, mdp="MotDePasse2026").status_code == 401
+    assert se_connecter(client, mdp="NouveauSecret77").status_code == 200
+
+
+def test_changement_refuse_si_l_actuel_est_faux_trop_court_ou_identique(client):
+    inscrire(client)
+    jeton = se_connecter(client).json()["access_token"]
+    assert changer(client, jeton, "Faux123456", "NouveauSecret77").status_code == 400
+    assert changer(client, jeton, "MotDePasse2026", "court").status_code == 422
+    assert changer(client, jeton, "MotDePasse2026", "MotDePasse2026").status_code == 422
+    assert se_connecter(client).status_code == 200
+
+
+def test_changement_reserve_aux_utilisateurs_connectes(client):
+    r = client.post("/auth/mot-de-passe", json={"motDePasseActuel": "x", "nouveauMotDePasse": "NouveauSecret77"})
+    assert r.status_code == 401
+
+
+def test_un_employe_change_son_propre_mot_de_passe_sans_toucher_aux_autres(client):
+    inscrire(client)
+    jeton = se_connecter(client).json()["access_token"]
+    entete = {"Authorization": f"Bearer {jeton}"}
+    r = client.post("/employes", headers=entete, json={"nom": "Moussa Fall", "fonction": "Preparateur",
+                    "identifiantConnexion": "moussa.fall", "motDePasse": "MotDePasse2026"})
+    assert r.status_code == 201
+    jeton_employe = se_connecter(client, "moussa.fall").json()["access_token"]
+    assert changer(client, jeton_employe, "MotDePasse2026", "SecretEmploye88").status_code == 200
+    assert se_connecter(client, "moussa.fall", "SecretEmploye88").status_code == 200
+    assert se_connecter(client, "awa.diop", "MotDePasse2026").status_code == 200

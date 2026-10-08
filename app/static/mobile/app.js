@@ -81,6 +81,7 @@ const ICONES = {
   grille: (t) => trait('<path d="M4 4v16h16"/><path d="M4 4h16M20 4v16" stroke-dasharray="2.5 2.5"/><path d="M9 9h2.5v2.5H9zM13.5 13.5H16V16h-2.5z"/>', t),
   employe: (t) => trait('<circle cx="10" cy="8" r="3.4"/><path d="M3.5 20c.7-3.4 3.2-5.2 6.5-5.2M18 12v6M15 15h6"/>', t),
   batiment: (t) => trait('<path d="M5 20V6l7-3 7 3v14"/><path d="M3 20h18M9 9h.01M9 13h.01M15 9h.01M15 13h.01M10.5 20v-3.5h3V20"/>', t),
+  cle: (t) => trait('<circle cx="8" cy="15" r="4"/><path d="m11 12 8-8m-3 3 3 3"/>', t),
   plus: (t) => trait('<path d="M12 5v14M5 12h14"/>', t),
   telecharger: (t) => trait('<path d="M12 4v11m0 0-4-4m4 4 4-4"/><path d="M5 19h14"/>', t),
   loupe: (t) => trait('<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>', t),
@@ -218,6 +219,7 @@ function rendre() {
   if (m && OPERATIONS[m[1]] && operationsScan().includes(m[1])) { vueScanner(m[1]); return; }
   if (hash === "#/resultat" && etat.resultat) { vueResultat(); return; }
   if (hash === "#/compte") { vueCompte(); return; }
+  if (hash === "#/compte/mot-de-passe") { vueMotDePasse(); return; }
   if (type === "fabricant") {
     if (hash === "#/produits") { vueProduits(); return; }
     if (hash === "#/produits/nouveau") { vueProduitNouveau(); return; }
@@ -236,17 +238,18 @@ function rendre() {
 
 function vueConnexion(erreur = "") {
   racine.innerHTML = `
+    <div class="connexion">
     <header class="connexion-tete">
       ${motif()}
       <div class="contenu">
-        ${marque(44)}
+        ${marque(38)}
         <h1>Traçabilité des médicaments</h1>
         <p>Suivez chaque unité, de la fabrication à la dispensation.</p>
       </div>
     </header>
     <main class="connexion-corps">
       <h2 class="connexion-titre">Se connecter</h2>
-      <p class="connexion-aide">Utilisez l'identifiant donné par le responsable de votre structure.</p>
+      <p class="connexion-aide">Identifiant choisi à l'inscription, ou remis par le responsable de votre structure.</p>
       <form id="formulaire" novalidate>
         <div id="erreur" role="alert">${erreur ? blocErreur(erreur) : ""}</div>
         <label class="champ"><span>Identifiant de connexion</span>
@@ -258,8 +261,8 @@ function vueConnexion(erreur = "") {
         </label>
         <button class="bouton" type="submit">Se connecter</button>
       </form>
-      <p class="lien-inscription">Votre structure n'a pas encore de compte ?<br><a href="#/inscription">Inscrire ma structure</a></p>
-    </main>`;
+      </main>
+    <p class="lien-inscription">Pas encore de compte ? <a href="#/inscription">Inscrire ma structure</a></p></div>`;
   const formulaire = document.getElementById("formulaire");
   (identifiantInitial ? formulaire.mdp : formulaire.identifiant).focus({ preventScroll: true });
   formulaire.querySelector('[data-action="oeil"]').addEventListener("click", (ev) => {
@@ -457,11 +460,44 @@ function vueCompte() {
       <section class="compte-carte"><div class="avatar">${echapper(initiales(p.nom))}</div>
         <h2>${echapper(p.nom)}</h2><p>${echapper(p.fonction)}</p>
         <p>${echapper(p.structure_nom)}</p><span class="puce">${TYPES_STRUCTURE[p.structure_type] || p.structure_type}</span></section>
-      <div style="margin-top:20px"><button class="bouton discret" data-action="sortir">${icone("deconnexion", 20)}Se déconnecter</button></div>
+      <div style="margin-top:20px;display:grid;gap:12px"><button class="bouton discret" data-aller="#/compte/mot-de-passe">${icone("cle", 20)}Changer mon mot de passe</button>
+      <button class="bouton discret" data-action="sortir">${icone("deconnexion", 20)}Se déconnecter</button></div>
     </div>
   </main>${barre("compte")}`;
   brancherBarre();
+  racine.querySelectorAll("[data-aller]").forEach((b) => b.addEventListener("click", () => aller(b.dataset.aller)));
   racine.querySelector('[data-action="sortir"]').addEventListener("click", fermerSession);
+}
+
+// Chaque utilisateur change son propre mot de passe
+function vueMotDePasse() {
+  sousPage("Mot de passe", `
+    <form id="formulaire" novalidate>${zoneErreur}
+      ${champ("motDePasseActuel", "Mot de passe actuel", { type: "password", mdp: true, autocomplete: "current-password", maxlength: 128 })}
+      ${champ("nouveauMotDePasse", "Nouveau mot de passe", { type: "password", mdp: true, autocomplete: "new-password", aide: "8 caractères au moins, différent de l'actuel", maxlength: 128 })}
+      ${boutonGenerer}
+      ${champ("confirmation", "Confirmer le nouveau mot de passe", { type: "password", mdp: true, autocomplete: "new-password", maxlength: 128 })}
+      <button class="bouton" type="submit">Changer le mot de passe</button>
+    </form>`, "#/compte");
+  const form = document.getElementById("formulaire");
+  brancherChamps(form);
+  form.addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    const brut = (n) => form[n].value;
+    if (!valider(form, [
+      ["motDePasseActuel", requis("Saisissez votre mot de passe actuel.")],
+      ["nouveauMotDePasse", (v) => (v.length < 8 ? "Le mot de passe compte au moins 8 caractères." : brut("nouveauMotDePasse") === brut("motDePasseActuel") ? "Choisissez un mot de passe différent de l'actuel." : "")],
+      ["confirmation", () => (brut("confirmation") === brut("nouveauMotDePasse") ? "" : "Les deux mots de passe ne sont pas identiques.")],
+    ])) return;
+    soumettre(form, "Enregistrement…", async () => {
+      await api("/auth/mot-de-passe", { methode: "POST", json: { motDePasseActuel: brut("motDePasseActuel"), nouveauMotDePasse: brut("nouveauMotDePasse") } });
+      afficherSucces({
+        titre: "Mot de passe modifié",
+        sous: "Utilisez-le à votre prochaine connexion.",
+        boutons: [{ texte: "Retour au compte", clic: () => aller("#/compte") }],
+      });
+    });
+  });
 }
 
 /* ------------------------------------------------------------------ Scanner */
@@ -720,10 +756,14 @@ function brancherChamps(form) {
     b.setAttribute("aria-label", visible ? "Afficher le mot de passe" : "Masquer le mot de passe");
   }));
   form.querySelector('[data-action="generer"]')?.addEventListener("click", () => {
-    form.motDePasse.value = genererMdp(); form.motDePasse.type = "text";
-    const oeil = form.querySelector('[data-action="oeil"]');
-    if (oeil) { oeil.innerHTML = icone("oeilBarre"); oeil.setAttribute("aria-label", "Masquer le mot de passe"); }
-    effacerErreur(form, "motDePasse");
+    const m = genererMdp();
+    for (const n of ["motDePasse", "nouveauMotDePasse", "confirmation"]) {
+      const entree = form.elements[n];
+      if (!entree) continue;
+      entree.value = m; entree.type = "text"; effacerErreur(form, n);
+      const oeil = entree.closest(".saisie").querySelector('[data-action="oeil"]');
+      if (oeil) { oeil.innerHTML = icone("oeilBarre"); oeil.setAttribute("aria-label", "Masquer le mot de passe"); }
+    }
   });
   form.addEventListener("input", (ev) => { if (ev.target.name) effacerErreur(form, ev.target.name); });
 }
@@ -774,6 +814,8 @@ function texteGestion(e) {
   if (/peremption/i.test(d)) return "La date de péremption doit être dans le futur.";
   if (/sr introuvable/i.test(d)) return "Ce service régional est introuvable parmi ceux de votre pharmacie nationale.";
   if (/sr dispose deja/i.test(d)) return "Ce service régional dispose déjà d'un compte responsable.";
+  if (/actuel incorrect/i.test(d)) return "Le mot de passe actuel est incorrect.";
+  if (/different de l'actuel/i.test(d)) return "Choisissez un mot de passe différent de l'actuel.";
   if (e.statut === 403) return "Votre compte n'est pas autorisé à effectuer cette action.";
   if (d === "validation" || e.statut === 422) return "Vérifiez les champs saisis.";
   return "L'opération n'a pas abouti. Réessayez.";

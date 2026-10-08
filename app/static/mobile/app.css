@@ -608,3 +608,29 @@ body { letter-spacing: -.006em; }
 .bilan span { display: block; margin-top: 6px; font-size: 12.5px; color: var(--encre-douce); font-weight: 500; }
 .bilan .ok strong { color: var(--ok); } .bilan .alerte strong { color: var(--ambre); } .bilan .refus strong { color: var(--vermillon); }
 .bilan .nul strong { color: #b5bed3; }
+
+/* ---------- Connexion: tient sur un écran, l'en-tête absorbe la hauteur disponible ---------- */
+.connexion { min-height: 100dvh; display: flex; flex-direction: column; }
+.connexion-tete {
+  flex: 1 1 auto; min-height: 150px; display: flex; flex-direction: column; justify-content: flex-end;
+  padding: calc(env(safe-area-inset-top) + 24px) 26px 70px;
+}
+.connexion-tete .contenu { display: flex; flex-direction: column; }
+.connexion-tete h1 { font-size: clamp(27px, 4.2dvh, 36px); margin-top: clamp(10px, 2.2dvh, 24px); max-width: 13ch; }
+.connexion-tete p { margin-top: 10px; font-size: 15px; max-width: 30ch; }
+.connexion-corps {
+  flex: none; margin: -46px 14px 0; padding: clamp(18px, 3dvh, 28px) 22px clamp(18px, 3dvh, 24px);
+  display: block; border-radius: 28px;
+}
+.connexion-titre { font-size: 23px; }
+.connexion-aide { margin: 6px 0 clamp(14px, 2.4dvh, 22px); font-size: 14.5px; line-height: 1.4; }
+.connexion-corps .champ { margin-bottom: clamp(12px, 2dvh, 18px); }
+.connexion-corps .champ .saisie, .connexion-corps .bouton { min-height: clamp(50px, 7dvh, 58px); }
+.connexion-corps form { margin: 0; }
+.lien-inscription { flex: none; margin: 0; padding: 18px 20px calc(env(safe-area-inset-bottom) + 22px); border: 0; font-size: 15px; text-align: center; }
+@media (max-height: 640px) {
+  .connexion-tete p, .connexion-aide { display: none; }
+  .connexion-titre { margin-bottom: 14px; }
+  .connexion-tete { padding-top: calc(env(safe-area-inset-top) + 16px); padding-bottom: 60px; }
+}
+
