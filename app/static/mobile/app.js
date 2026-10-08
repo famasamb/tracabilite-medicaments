@@ -765,9 +765,12 @@ function vueResultat() {
     sous = "Cet identifiant est déjà désactivé. Une réutilisation est possible : une alerte est soumise à vérification.";
   } else if (r.donnees.alerte) {
     genre = "alerte"; titre = o.alerte;
-    sous = r.op === "dispensation"
-      ? "Aucune réception par cette officine dans l'historique de l'unité. À faire vérifier."
-      : "Cet identifiant était déjà désactivé. L'événement est gardé avec une alerte à vérifier.";
+    const rupture = r.donnees.typeAnomalie === "ruptureSequence" || (!r.donnees.typeAnomalie && r.op === "dispensation");
+    sous = !rupture
+      ? "Cet identifiant était déjà désactivé. L'événement est gardé avec une alerte à vérifier."
+      : r.op === "dispensation"
+        ? "Aucune réception par cette officine dans l'historique de l'unité. À faire vérifier."
+        : "Aucune expédition de cette unité dans l'historique : l'événement est gardé avec une alerte à vérifier.";
   } else {
     genre = "ok"; titre = o.succes; sous = "L'unité est enregistrée dans l'historique.";
   }

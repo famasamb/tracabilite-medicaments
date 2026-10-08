@@ -145,6 +145,7 @@ class EvenementSortie(BaseModel):
     alerte: bool
     message: str
     methodeLecture: str | None = None   # classique, deep_learning ou saisie
+    typeAnomalie: str | None = None   # reutilisationIdentifiant ou ruptureSequence quand une alerte est levee
 
 
 class DernierEvenement(BaseModel):

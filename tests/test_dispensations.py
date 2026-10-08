@@ -4,9 +4,11 @@ from tests.test_evenements import connecte, inscrire_structure, serialiser, sess
 
 
 def preparer(client):
-    """Une officine qui a recu une unite serialisee. Renvoie (serie, image, en-tetes officine)."""
-    images, _ = serialiser(client)
+    """Une officine qui a recu une unite serialisee, expediee avant par le fabricant. Renvoie (serie, image, en-tetes officine)."""
+    images, fabricant = serialiser(client)
     serie, png = next(iter(images.items()))
+    assert client.post("/evenements", headers=fabricant,
+                       data={"typeOperation": "expedition", "numeroSerie": serie}).status_code == 201
     officine = inscrire_structure(client, "officine", "TEST-OFF-001", "pharma1")
     r = client.post("/evenements", headers=officine,
                     data={"typeOperation": "reception", "numeroSerie": serie})
@@ -25,7 +27,7 @@ def test_dispensation_nominale_par_image_desactive_lunite(client):
     assert corps["alerte"] is False
     db = session(client)
     assert db.get(Unite, serie).statut == StatutUnite.desactivee
-    assert db.query(Evenement).count() == 2  # reception + dispensation
+    assert db.query(Evenement).count() == 3  # expedition + reception + dispensation
     assert db.query(Anomalie).count() == 0
 
 
@@ -42,7 +44,7 @@ def test_deuxieme_dispensation_refusee_avec_alerte_de_reutilisation(client):
     assert r.status_code == 409 and "Reutilisation possible" in r.json()["detail"]
     db = session(client)
     assert db.get(Unite, serie).statut == StatutUnite.desactivee
-    assert db.query(Evenement).count() == 3  # reception, dispensation, tentative gardee
+    assert db.query(Evenement).count() == 4  # expedition, reception, dispensation, tentative gardee
     anomalie = db.query(Anomalie).one()
     assert anomalie.typeAnomalie.value == "reutilisationIdentifiant" and anomalie.statut == "a_verifier"
 

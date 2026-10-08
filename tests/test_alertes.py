@@ -2,10 +2,23 @@
 from datetime import date, timedelta
 
 from app.alertes import alertes_regroupees
-from app.models import Anomalie, Evenement, Lot, ReferenceAutorisation, TypeAnomalie, TypeStructure, Unite
+from app.models import (Anomalie, Evenement, Lot, ReferenceAutorisation, TypeAnomalie, TypeOperation, TypeStructure,
+                        Unite, Utilisateur)
 from tests.test_evenements import inscrire_structure, serialiser, session
 
 CONCENTRATION, REUTILISATION = TypeAnomalie.concentrationInhabituelle, TypeAnomalie.reutilisationIdentifiant
+
+
+def expedier(db, series):
+    """Le fabricant a expedie ces unites (evenements ecrits en base): sans cela, chaque reception serait une rupture."""
+    fabricant = db.query(Utilisateur).filter(Utilisateur.identifiantConnexion == "awa.diop").one()
+    db.add_all([Evenement(typeOperation=TypeOperation.expedition, numeroSerie=s, utilisateur_id=fabricant.id)
+                for s in series])
+    db.commit()
+
+
+def receptions(db):
+    return db.query(Evenement).filter(Evenement.typeOperation == TypeOperation.reception).order_by(Evenement.dateHeure).all()
 
 
 def recevoir(client, entete, series):
@@ -18,9 +31,10 @@ def test_une_concentration_de_plusieurs_evenements_est_une_seule_alerte(client):
     images, _ = serialiser(client, quantite=5)
     series = list(images)
     officine = inscrire_structure(client, "officine", "TEST-OFF-001", "pharma1")
-    recevoir(client, officine, series[:4])
     db = session(client)
-    evenements = db.query(Evenement).order_by(Evenement.dateHeure).all()
+    expedier(db, series)
+    recevoir(client, officine, series[:4])
+    evenements = receptions(db)
     for e in evenements:
         db.add(Anomalie(typeAnomalie=CONCENTRATION, score=0.8, evenement_id=e.id))
     db.add(Anomalie(typeAnomalie=REUTILISATION, score=1.0, evenement_id=evenements[0].id))
@@ -54,9 +68,10 @@ def test_deux_officines_ou_deux_lots_font_des_alertes_distinctes(client):
     db.commit()
     a = inscrire_structure(client, "officine", "TEST-OFF-001", "pharma1")
     b = inscrire_structure(client, "officine", "TEST-OFF-002", "pharma2")
+    expedier(db, list(premier) + ["B-1", "B-2"])
     recevoir(client, a, list(premier)[:2] + ["B-1", "B-2"])
     recevoir(client, b, list(premier)[2:])
-    for e in db.query(Evenement).all():
+    for e in receptions(db):
         db.add(Anomalie(typeAnomalie=CONCENTRATION, score=0.9, evenement_id=e.id))
     db.commit()
     alertes = alertes_regroupees(db)

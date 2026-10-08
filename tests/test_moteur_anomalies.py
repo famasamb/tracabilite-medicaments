@@ -44,7 +44,7 @@ def test_une_chaine_normale_ne_signale_rien():
 
 
 def test_un_evenement_apres_la_dispensation_est_une_reutilisation():
-    base = [op("S1", TypeOperation.reception, 0, "off"), op("S1", TypeOperation.dispensation, 10, "off")]
+    base = [op("S1", TypeOperation.expedition, -5, "fab"), op("S1", TypeOperation.reception, 0, "off"), op("S1", TypeOperation.dispensation, 10, "off")]
     for type_ in TypeOperation:
         detections = analyser_unite(base + [op("S1", type_, 20, "autre", "dernier")])
         assert [(d.evenement_id, d.type) for d in detections] == [("dernier", REUTILISATION)]
@@ -53,21 +53,23 @@ def test_un_evenement_apres_la_dispensation_est_une_reutilisation():
 def test_une_dispensation_sans_reception_par_la_meme_structure_est_une_rupture():
     sans_reception = [op("S1", TypeOperation.dispensation, 10, "off", "d")]
     assert [(d.evenement_id, d.type) for d in analyser_unite(sans_reception)] == [("d", RUPTURE)]
-    recue_ailleurs = [op("S1", TypeOperation.reception, 0, "autre"), op("S1", TypeOperation.dispensation, 10, "off", "d")]
+    recue_ailleurs = [op("S1", TypeOperation.expedition, -5, "fab"), op("S1", TypeOperation.reception, 0, "autre"), op("S1", TypeOperation.dispensation, 10, "off", "d")]
     assert types(analyser_unite(recue_ailleurs)) == [RUPTURE]
-    recue_ici = [op("S1", TypeOperation.reception, 0, "off"), op("S1", TypeOperation.dispensation, 10, "off")]
+    recue_ici = [op("S1", TypeOperation.expedition, -5, "fab"), op("S1", TypeOperation.reception, 0, "off"), op("S1", TypeOperation.dispensation, 10, "off")]
     assert analyser_unite(recue_ici) == []
 
 
 def test_une_reutilisation_n_est_pas_signalee_en_plus_comme_rupture():
     # deuxieme dispensation par une structure qui n'a jamais recu l'unite: reutilisation seulement
-    histoire = [op("S1", TypeOperation.reception, 0, "a"), op("S1", TypeOperation.dispensation, 10, "a"),
+    histoire = [op("S1", TypeOperation.expedition, -5, "fab"), op("S1", TypeOperation.reception, 0, "a"),
+                op("S1", TypeOperation.dispensation, 10, "a"),
                 op("S1", TypeOperation.dispensation, 20, "b", "second")]
     assert [(d.evenement_id, d.type) for d in analyser_unite(histoire)] == [("second", REUTILISATION)]
 
 
 def test_l_ordre_de_la_liste_ne_compte_pas_seul_le_temps_compte():
-    desordre = [op("S1", TypeOperation.dispensation, 10, "off"), op("S1", TypeOperation.reception, 0, "off")]
+    desordre = [op("S1", TypeOperation.dispensation, 10, "off"), op("S1", TypeOperation.reception, 0, "off"),
+                op("S1", TypeOperation.expedition, -5, "fab")]
     assert analyser_unite(desordre) == []
 
 
@@ -91,7 +93,7 @@ def test_le_moteur_retrouve_exactement_les_anomalies_injectees_dans_la_simulatio
 
 
 def test_un_trajet_trop_rapide_est_signale_a_l_evenement_d_arrivee():
-    histoire = [op("S1", TypeOperation.reception, 0, "off1", position=DAKAR),
+    histoire = [op("S1", TypeOperation.expedition, 0, "off1", position=DAKAR),
                 op("S1", TypeOperation.reception, 30, "off2", "arrivee", position=ZIGUINCHOR)]   # 267 km en 30 min
     detections = analyser_unite(histoire)
     assert [(d.evenement_id, d.type) for d in detections] == [("arrivee", TRAJET)]
@@ -100,18 +102,18 @@ def test_un_trajet_trop_rapide_est_signale_a_l_evenement_d_arrivee():
 
 def test_un_trajet_plausible_ou_court_ou_sans_position_n_est_pas_signale():
     # 267 km en 8 h: 33 km/h
-    assert analyser_unite([op("S1", TypeOperation.reception, 0, "a", position=DAKAR),
+    assert analyser_unite([op("S1", TypeOperation.expedition, 0, "a", position=DAKAR),
                            op("S1", TypeOperation.reception, 480, "b", position=ZIGUINCHOR)]) == []
     # 16 km en 2 minutes: rapide, mais sous la distance minimale
-    assert analyser_unite([op("S1", TypeOperation.reception, 0, "a", position=DAKAR),
+    assert analyser_unite([op("S1", TypeOperation.expedition, 0, "a", position=DAKAR),
                            op("S1", TypeOperation.reception, 2, "b", position=PROCHE)]) == []
     # le deuxieme evenement n'a pas de position: rien a comparer
-    assert analyser_unite([op("S1", TypeOperation.reception, 0, "a", position=DAKAR),
+    assert analyser_unite([op("S1", TypeOperation.expedition, 0, "a", position=DAKAR),
                            op("S1", TypeOperation.reception, 5, "b")]) == []
 
 
 def test_un_evenement_sans_position_est_ignore_et_on_relie_les_deux_positions_connues():
-    histoire = [op("S1", TypeOperation.reception, 0, "a", position=DAKAR),
+    histoire = [op("S1", TypeOperation.expedition, 0, "a", position=DAKAR),
                 op("S1", TypeOperation.expedition, 10, "a"),
                 op("S1", TypeOperation.reception, 30, "b", "arrivee", position=ZIGUINCHOR)]
     assert [(d.evenement_id, d.type) for d in analyser_unite(histoire)] == [("arrivee", TRAJET)]
@@ -125,7 +127,8 @@ def test_les_limites_du_trajet_inhabituel():
 
 
 def test_un_meme_evenement_peut_reveler_une_reutilisation_et_un_trajet():
-    histoire = [op("S1", TypeOperation.reception, 0, "off", position=DAKAR),
+    histoire = [op("S1", TypeOperation.expedition, -5, "fab", position=DAKAR),
+                op("S1", TypeOperation.reception, 0, "off", position=DAKAR),
                 op("S1", TypeOperation.dispensation, 10, "off", position=DAKAR),
                 op("S1", TypeOperation.reception, 20, "autre", "dernier", position=ZIGUINCHOR)]
     assert sorted(d.type.value for d in analyser_unite(histoire)) == [REUTILISATION.value, TRAJET.value]

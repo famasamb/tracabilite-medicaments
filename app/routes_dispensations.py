@@ -69,4 +69,5 @@ async def enregistrer_dispensation(
                            typeOperation=evenement.typeOperation, dateHeure=evenement.dateHeure,
                            latitude=evenement.latitude, longitude=evenement.longitude,
                            alerte=alerte, message=message,
+                           typeAnomalie="ruptureSequence" if alerte else None,
                            methodeLecture=getattr(unite, "methode_lecture", None))

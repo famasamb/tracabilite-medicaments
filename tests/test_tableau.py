@@ -26,8 +26,11 @@ def reception(client, entete, serie, gps=True):
 def scenario(client):
     """PNA avec 2 SR actifs. Dakar: 2 receptions (1 avec GPS). Diourbel: 2 receptions avec GPS,
     dont une unite deja desactivee (alerte). Une officine recoit aussi une unite (hors circuit public)."""
-    images, _ = serialiser(client, quantite=5)
+    images, fabricant = serialiser(client, quantite=5)
     series = list(images)
+    for serie in series:     # le fabricant expedie d'abord: sinon chaque reception serait une rupture de sequence
+        assert client.post("/evenements", headers=fabricant,
+                           data={"typeOperation": "expedition", "numeroSerie": serie}).status_code == 201
     db = session(client)
     db.get(Unite, series[3]).statut = StatutUnite.desactivee
     db.commit()

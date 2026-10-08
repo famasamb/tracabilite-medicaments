@@ -5,7 +5,8 @@ Les deux premieres regles sont celles que l'application applique deja au moment 
 evenement par evenement, dans l'ordre du temps:
 
   reutilisationIdentifiant : l'unite avait deja ete dispensee (son identifiant est desactive).
-  ruptureSequence          : une officine dispense une unite qu'elle n'a jamais recue.
+  ruptureSequence          : une officine dispense une unite qu'elle n'a jamais recue, ou une structure recoit
+                             une unite qu'aucune autre structure n'a jamais expediee.
   trajetInhabituel         : l'unite se retrouve, en peu de temps, trop loin de son evenement precedent:
                              la vitesse moyenne entre les deux depasse ce qu'un vehicule peut faire.
   concentrationInhabituelle: une officine recoit, dans un seul lot, beaucoup plus d'unites que ce qu'elle
@@ -73,9 +74,13 @@ def est_reutilisation(avant: list[Operation]) -> bool:
 
 
 def est_rupture(avant: list[Operation], courant: Operation) -> bool:
-    """Vrai si l'evenement est une dispensation par une structure qui n'a jamais recu l'unite."""
-    return courant.type == TypeOperation.dispensation and not any(
-        a.type == TypeOperation.reception and a.structure_id == courant.structure_id for a in avant)
+    """Vrai si l'evenement rompt la sequence: dispensation sans reception par cette structure, ou reception
+    d'une unite qu'aucune autre structure n'a expediee."""
+    if courant.type == TypeOperation.dispensation:
+        return not any(a.type == TypeOperation.reception and a.structure_id == courant.structure_id for a in avant)
+    if courant.type == TypeOperation.reception:
+        return not any(a.type == TypeOperation.expedition and a.structure_id != courant.structure_id for a in avant)
+    return False
 
 
 def a_une_position(o: Operation) -> bool:
@@ -120,7 +125,9 @@ def analyser_unite(operations: list[Operation]) -> list[Detection]:
         elif est_rupture(avant, courant):
             detections.append(Detection(
                 courant.id, courant.numeroSerie, TypeAnomalie.ruptureSequence, SCORE_REGLE,
-                "dispensation sans reception par cette structure dans l'historique"))
+                ("dispensation sans reception par cette structure dans l'historique"
+                 if courant.type == TypeOperation.dispensation
+                 else "reception sans expedition par une autre structure dans l'historique")))
         if courant.id in depuis_precedent and est_trajet_inhabituel(*depuis_precedent[courant.id]):
             km, heures = depuis_precedent[courant.id]
             duree = f"{heures * 60:.0f} min" if heures < 2 else f"{heures:.1f} h"

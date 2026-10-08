@@ -33,6 +33,14 @@ def extraire_numero_serie(texte: str) -> str | None:
     return trouve.group(1) if trouve else None
 
 
+def _expediee_par_une_autre_structure(db: Session, numero_serie: str, structure_id: str) -> bool:
+    """Vrai si l'historique de l'unite contient une expedition faite par une autre structure que celle-ci."""
+    return db.query(Evenement).join(Utilisateur, Evenement.utilisateur_id == Utilisateur.id).filter(
+        Evenement.numeroSerie == numero_serie,
+        Evenement.typeOperation == TypeOperation.expedition,
+        Utilisateur.structure_id != structure_id).first() is not None
+
+
 async def obtenir_unite(db: Session, image: UploadFile | None, numero_serie: str | None) -> Unite:
     """Lit le code sur l'image (methode classique); si elle echoue, utilise la saisie manuelle.
 
@@ -90,17 +98,27 @@ async def enregistrer_evenement(
     db.add(evenement)
 
     # Variante 3b: unite deja desactivee, l'evenement est enregistre avec une alerte a verifier
-    alerte = unite.statut == StatutUnite.desactivee
+    type_anomalie = None
+    if unite.statut == StatutUnite.desactivee:
+        type_anomalie = TypeAnomalie.reutilisationIdentifiant
+        message = "Enregistre avec une alerte: identifiant deja desactive, a verifier."
+    # Rupture de sequence a la reception: aucune expedition de cette unite par une autre structure dans
+    # l'historique. Comme pour la dispensation (fiche 8, variante 3c), l'evenement est garde avec une alerte.
+    elif (typeOperation == TypeOperation.reception
+          and not _expediee_par_une_autre_structure(db, unite.numeroSerie, utilisateur.structure_id)):
+        type_anomalie = TypeAnomalie.ruptureSequence
+        message = "Enregistre avec une alerte: aucune expedition de cette unite dans l'historique, a verifier."
+    else:
+        message = "Evenement enregistre."
+    alerte = type_anomalie is not None
     if alerte:
-        db.add(Anomalie(typeAnomalie=TypeAnomalie.reutilisationIdentifiant, score=1.0,
-                        evenement=evenement))
+        db.add(Anomalie(typeAnomalie=type_anomalie, score=1.0, evenement=evenement))
     db.commit()
     db.refresh(evenement)
 
-    message = ("Enregistre avec une alerte: identifiant deja desactive, a verifier."
-               if alerte else "Evenement enregistre.")
     return EvenementSortie(id=evenement.id, numeroSerie=evenement.numeroSerie,
                            typeOperation=evenement.typeOperation, dateHeure=evenement.dateHeure,
                            latitude=evenement.latitude, longitude=evenement.longitude,
                            alerte=alerte, message=message,
+                           typeAnomalie=type_anomalie.value if type_anomalie else None,
                            methodeLecture=getattr(unite, "methode_lecture", None))
