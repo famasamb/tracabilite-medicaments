@@ -67,6 +67,8 @@ const ICONES = {
   dispensation: (t) => trait('<rect x="2.5" y="8.5" width="19" height="7" rx="3.5" transform="rotate(-45 12 12)"/><path d="m9.2 9.2 5.6 5.6"/>', t),
   verifier: (t) => trait('<path d="M12 3 5 6v5.5c0 4.4 3 7.6 7 9.5 4-1.9 7-5.1 7-9.5V6l-7-3Z"/><path d="m9 12 2.2 2.2L15.5 10"/>', t),
   accueil: (t) => trait('<path d="M4 11 12 4l8 7"/><path d="M6 10v9h12v-9"/>', t),
+  cadenas: (t) => trait('<rect x="5" y="10.5" width="14" height="9.5" rx="2.6"/><path d="M8.2 10.5V8a3.8 3.8 0 0 1 7.6 0v2.5M12 14.4v2"/>', t),
+  flecheLongue: (t) => trait('<path d="M4.5 12h15m-5.5-5.5L19.5 12 14 17.5"/>', t),
   compte: (t) => trait('<circle cx="12" cy="8" r="3.6"/><path d="M5 20c.8-3.6 3.6-5.4 7-5.4s6.2 1.8 7 5.4"/>', t),
   fleche: (t) => trait('<path d="m9 6 6 6-6 6"/>', t),
   retour: (t) => trait('<path d="m15 6-6 6 6 6"/>', t),
@@ -252,17 +254,18 @@ function vueConnexion(erreur = "") {
       <form id="formulaire" novalidate>
         <div id="erreur" role="alert">${erreur ? blocErreur(erreur) : ""}</div>
         <label class="champ"><span>Identifiant de connexion</span>
-          <div class="saisie"><input name="identifiant" autocomplete="username" autocapitalize="none" spellcheck="false" value="${echapper(identifiantInitial)}" required></div>
+          <div class="saisie"><span class="pre">${icone("compte", 22)}</span><input name="identifiant" autocomplete="username" autocapitalize="none" spellcheck="false" value="${echapper(identifiantInitial)}" required></div>
         </label>
         <label class="champ"><span>Mot de passe</span>
-          <div class="saisie"><input name="mdp" type="password" autocomplete="current-password" required>
+          <div class="saisie"><span class="pre">${icone("cadenas", 22)}</span><input name="mdp" type="password" autocomplete="current-password" required>
             <button type="button" class="oeil" data-action="oeil" aria-label="Afficher le mot de passe">${icone("oeil")}</button></div>
         </label>
         <p class="oubli"><a href="#/mot-de-passe-oublie">Mot de passe oublié ?</a></p>
-        <button class="bouton" type="submit">Se connecter</button>
+        <button class="bouton" type="submit">Se connecter ${icone("flecheLongue", 22)}</button>
       </form>
-      </main>
-    <p class="lien-inscription">Pas encore de compte ? <a href="#/inscription">Inscrire ma structure</a></p></div>`;
+      <div class="ou" role="separator"><span>Ou</span></div>
+      <a class="bouton contour" href="#/inscription">${icone("batiment", 22)}Inscrire ma structure</a>
+      </main></div>`;
   const formulaire = document.getElementById("formulaire");
   (identifiantInitial ? formulaire.mdp : formulaire.identifiant).focus({ preventScroll: true });
   formulaire.querySelector('[data-action="oeil"]').addEventListener("click", (ev) => {
@@ -288,7 +291,7 @@ function vueConnexion(erreur = "") {
     } catch (e) {
       etat.jeton = etat.profil = null;
       zone.innerHTML = blocErreur(texteConnexion(e));
-      bouton.disabled = false; bouton.textContent = "Se connecter";
+      bouton.disabled = false; bouton.innerHTML = `Se connecter ${icone("flecheLongue", 22)}`;
     }
   });
 }

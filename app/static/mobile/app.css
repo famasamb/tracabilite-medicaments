@@ -849,3 +849,20 @@ strong { font-weight: 650; }
 .hero.clair .puce.claire { background: var(--ciel); color: var(--marine); border: 0; }
 .hero.clair .puce.claire::before { background: var(--marine); box-shadow: none; }
 .hero.clair + .accueil-corps { margin-top: 18px; }
+
+/* ---------- Connexion: champs à icône, séparateur « Ou », bouton d'inscription ---------- */
+.champ .saisie { background: #f1f6f3; border: 1px solid #d3e0d8; overflow: hidden; }
+.champ .saisie:focus-within { background: var(--surface); }
+.champ .saisie .pre {
+  flex: none; align-self: stretch; width: 54px; display: grid; place-items: center;
+  color: var(--marine); border-right: 1px solid #d3e0d8; background: #e8f0eb;
+}
+.champ .saisie .pre + input { padding-left: 16px; }
+.champ input::placeholder { color: #6c7f78; }
+.connexion-corps .champ .oeil { color: var(--marine); }
+.bouton svg { flex: none; }
+.bouton.contour { background: transparent; border: 1.5px solid var(--marine); color: var(--marine); box-shadow: none; text-decoration: none; }
+.bouton.contour:active { background: var(--ciel); }
+.ou { display: flex; align-items: center; gap: 14px; margin: clamp(12px, 2dvh, 18px) 0; color: var(--encre-douce); font-size: 14px; }
+.ou::before, .ou::after { content: ""; flex: 1; height: 1px; background: var(--trait); }
+.connexion-corps { margin-bottom: calc(env(safe-area-inset-bottom) + 22px); }
