@@ -321,10 +321,11 @@ function vueAccueil() {
       <h2 class="section-titre">Récents sur cet appareil</h2>
       ${liste.length ? `<div class="recents">${liste.map(ligneRecent).join("")}</div>`
         : `<div class="recents"><div class="vide"><strong>Aucune opération pour l'instant</strong>Les unités que vous scannez apparaîtront ici.</div></div>`}
-      ${liste.length ? '<p class="mention">Liste conservée sur cet appareil seulement.</p>' : ""}
+      ${liste.length ? '<p class="mention">Appuyez sur une unité pour revoir son statut. Liste conservée sur cet appareil seulement.</p>' : ""}
     </main>${barre("accueil")}`;
   brancherBarre();
   racine.querySelectorAll("[data-op]").forEach((b) => b.addEventListener("click", () => aller(`#/scan/${b.dataset.op}`)));
+  racine.querySelectorAll("[data-serie]").forEach((b) => b.addEventListener("click", () => verifierRecent(b.dataset.serie)));
 }
 
 function ligneRecent(r) {
@@ -332,8 +333,39 @@ function ligneRecent(r) {
   const classe = r.issue === "ok" ? "ok" : r.issue === "alerte" ? "alerte" : "refus";
   const mot = { ok: "Enregistrée", alerte: "À vérifier", refus: "Refusée" }[r.issue];
   const symbole = icone({ ok: "coche", alerte: "attention", refus: "croix" }[r.issue], 20);
-  return `<div class="recent"><span class="pastille ${classe}">${symbole}</span>
-    <span class="texte"><strong>${o.titre}</strong><small>${echapper(r.serie)} · ${mot}</small></span><time>${ilYA(r.date)}</time></div>`;
+  const interieur = `<span class="pastille ${classe}">${symbole}</span>
+    <span class="texte"><strong>${o.titre}</strong><small>${echapper(r.serie)}</small></span>
+    <span class="droite"><strong class="${classe}">${mot}</strong><time>${ilYA(r.date)}</time></span>`;
+  // Une unité dont on connaît le numéro de série peut être revérifiée d'un appui
+  return r.serie && r.serie !== "Code scanné"
+    ? `<button class="recent" data-serie="${echapper(r.serie)}" aria-label="Voir le statut de l'unité ${echapper(r.serie)}">${interieur}<span class="fleche">${icone("fleche", 18)}</span></button>`
+    : `<div class="recent">${interieur}</div>`;
+}
+
+// Revérifier une unité déjà scannée sur cet appareil, sans rescanner
+async function verifierRecent(serie) {
+  const chargement = document.createElement("div");
+  chargement.className = "chargement"; chargement.setAttribute("role", "status");
+  chargement.innerHTML = '<div><div class="anneau"></div><strong>Vérification…</strong></div>';
+  document.body.appendChild(chargement);
+  try {
+    const f = new FormData(); f.append("numeroSerie", serie);
+    const donnees = await api("/unites/statut", { methode: "POST", formulaire: f });
+    etat.resultat = { op: "statut", donnees, date: new Date().toISOString() };
+    aller("#/resultat");
+  } catch (e) {
+    if (e.statut === 401) { fermerSession(); return; }
+    const { titre, texte } = texteScan(e);
+    annoncer(`${titre}. ${texte}`);
+  } finally { chargement.remove(); }
+}
+
+function annoncer(texte) {
+  document.querySelector(".annonce")?.remove();
+  const a = document.createElement("div");
+  a.className = "annonce"; a.setAttribute("role", "alert"); a.textContent = texte;
+  document.body.appendChild(a);
+  setTimeout(() => a.remove(), 5000);
 }
 
 /* ------------------------------------------------------------------ Compte et PNA */

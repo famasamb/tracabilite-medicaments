@@ -188,7 +188,9 @@ h1, h2, h3 { font-family: var(--police-titre); margin: 0; letter-spacing: -0.01e
 .action.principale strong { font-size: 22px; }
 
 .recents { background: var(--surface); border: 1.5px solid var(--trait); border-radius: var(--rayon-grand); overflow: hidden; }
-.recent { display: flex; align-items: center; gap: 14px; padding: 14px 16px; }
+.recent { display: flex; align-items: center; gap: 14px; padding: 14px 16px; width: 100%; background: transparent; border: 0; text-align: left; }
+button.recent:active { background: var(--menthe); }
+.recent .fleche { flex: none; color: var(--encre-douce); }
 .recent + .recent { border-top: 1px solid var(--trait); }
 .recent .pastille { flex: none; width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; }
 .pastille.ok { background: var(--menthe); color: var(--pin); }
@@ -197,7 +199,12 @@ h1, h2, h3 { font-family: var(--police-titre); margin: 0; letter-spacing: -0.01e
 .recent .texte { flex: 1; min-width: 0; }
 .recent strong { display: block; font-weight: 600; }
 .recent small { color: var(--encre-douce); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.recent time { flex: none; color: var(--encre-douce); font-size: 13px; }
+.recent .droite { flex: none; text-align: right; }
+.recent .droite strong { font-size: 14px; }
+.recent .droite .ok { color: var(--pin); }
+.recent .droite .alerte { color: var(--ambre); }
+.recent .droite .refus { color: var(--vermillon); }
+.recent time { display: block; color: var(--encre-douce); font-size: 13px; }
 .vide { padding: 22px 18px; color: var(--encre-douce); }
 .vide strong { display: block; color: var(--encre); margin-bottom: 2px; }
 .mention { margin-top: 12px; color: var(--encre-douce); font-size: 13px; }
@@ -360,4 +367,13 @@ h1, h2, h3 { font-family: var(--police-titre); margin: 0; letter-spacing: -0.01e
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+}
+
+.annonce {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(var(--haut-barre) + env(safe-area-inset-bottom) + 24px);
+  width: min(92vw, 440px); z-index: 70;
+  background: var(--encre); color: #fff; padding: 14px 16px; border-radius: var(--rayon);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .3);
+  animation: montee .22s ease-out;
 }
