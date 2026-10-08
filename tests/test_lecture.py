@@ -66,8 +66,13 @@ def test_la_route_indique_comment_le_code_a_ete_lu(client, monkeypatch):
     # 2. saisie manuelle
     r = client.post("/unites/statut", headers=fabricant, data={"numeroSerie": serie})
     assert r.json()["methodeLecture"] == "saisie"
-    # 3. photo floue retrouvee par le deep learning (localiseur simule avec la vraie boite)
-    octets, boite = scene_floue(lire_code(png))
+    # 3. photo floue retrouvee par le deep learning (localiseur simule avec la vraie boite).
+    #    Le numero de serie est tire au hasard a chaque serialisation: on ne cherche donc pas un flou qui convienne, on simule
+    #    l'echec de la lecture classique et on garde l'image nette pour la zone recadree.
+    contenu = lire_code(png)
+    image, boite = composer_boite(generer_image_code(contenu), "Produit", "JD-001", np.random.default_rng(1))
+    octets = cv2.imencode(".png", image)[1].tobytes()
+    monkeypatch.setattr(lecture, "lire_code", lambda donnees: None)
     monkeypatch.setattr(lecture, "localiseur_disponible", lambda: (lambda image: boite))
     r = client.post("/unites/statut", headers=fabricant, files={"image": ("photo.png", octets, "image/png")})
     assert r.status_code == 200 and r.json()["methodeLecture"] == "deep_learning" and r.json()["numeroSerie"] == serie

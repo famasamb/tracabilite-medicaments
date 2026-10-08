@@ -1,31 +1,52 @@
 /* Application mobile de traçabilité des médicaments.
-   Motif conducteur: le DataMatrix (bord en L plein, bords opposés en pointillés).
+   Motif conducteur: le DataMatrix (bord en L plein, bords opposés en pointillés), tissé en trame de fond.
+   Le fil indigo suit une unité d'étape en étape. Coins arrondis, avec un petit coin en bas à gauche.
    Une surface sombre pour s'orienter (en-têtes), des surfaces claires à relief pour agir. */
 
 @font-face {
-  font-family: "Geist";
-  src: url("fonts/geist-latin-wght-normal.woff2") format("woff2");
-  font-weight: 100 900;
+  font-family: "Bricolage Grotesque";
+  src: url("fonts/bricolage-grotesque-latin-wght-normal.woff2") format("woff2");
+  font-weight: 200 800;
   font-display: swap;
 }
 @font-face {
-  font-family: "Geist Mono";
-  src: url("fonts/geist-mono-latin-wght-normal.woff2") format("woff2");
-  font-weight: 100 900;
+  font-family: "Hanken Grotesk";
+  src: url("fonts/hanken-grotesk-latin-400-normal.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Hanken Grotesk";
+  src: url("fonts/hanken-grotesk-latin-500-normal.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Hanken Grotesk";
+  src: url("fonts/hanken-grotesk-latin-600-normal.woff2") format("woff2");
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Hanken Grotesk";
+  src: url("fonts/hanken-grotesk-latin-700-normal.woff2") format("woff2");
+  font-weight: 700;
   font-display: swap;
 }
 
 /* Marque: vert pin profond. Les verdicts (vert vif, ambre, rouge) ne servent qu'aux résultats et restent plus clairs et plus vifs que la marque. */
 :root {
   --encre: #0e1f1b;
-  --encre-douce: #566660;
-  --papier: #f3f5f2;
+  --encre-douce: #4c625b;
+  --papier: #f3f5f1;
   --surface: #ffffff;
-  --trait: #dce3de;
-  --nuit: #021f19;
-  --marine: #06382e;
-  --cobalt: #0b5d4b;
-  --cobalt-clair: #1a8f74;
+  --trait: #dbe3dc;
+  --nuit: #04211a;
+  --marine: #0b4a3b;
+  --cobalt: #0b4a3b;
+  --cobalt-clair: #1f7a62;
+  --indigo: #2b3a7a;
+  --indigo-fond: #e1e5f3;
   --lueur: #8fe0c3;
   --ciel: #d6eee4;
   --ok: #0c8a5b;
@@ -33,16 +54,16 @@
   --ambre: #8a5300;
   --ambre-fond: #fbe8bd;
   --ambre-vif: #e0a21b;
-  --vermillon: #b02a1c;
+  --vermillon: #c2392b;
   --vermillon-fond: #fbdcd6;
   --rayon-grand: 22px;
   --rayon: 16px;
   --ombre: 0 1px 2px rgba(9, 27, 23, .05), 0 12px 28px -14px rgba(9, 27, 23, .24);
   --ombre-forte: 0 2px 4px rgba(9, 27, 23, .06), 0 22px 44px -18px rgba(9, 27, 23, .34);
   --fin: 1px solid rgba(9, 27, 23, .07);
-  --police-titre: "Geist", "Segoe UI", system-ui, sans-serif;
-  --police: "Geist", "Segoe UI", system-ui, sans-serif;
-  --police-id: "Geist Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --police-titre: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --police: "Hanken Grotesk", "Segoe UI", system-ui, sans-serif;
+  --police-id: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --haut-barre: 68px;
   --bas: calc(var(--haut-barre) + 36px + env(safe-area-inset-bottom));
 }
@@ -650,3 +671,181 @@ body { letter-spacing: -.006em; }
   .oubli a { padding-top: 2px; padding-bottom: 2px; }
 }
 @media (max-height: 600px) { .connexion-tete { padding-bottom: 44px; } }
+
+
+/* ====================================================================================
+   Identité visuelle « Tissage » : la trame du DataMatrix en fond, le fil indigo des unités,
+   des coins arrondis avec un petit coin en bas à gauche.
+   ==================================================================================== */
+:root {
+  --coin: 6px;
+  --r-carte: 24px 24px 24px var(--coin);
+  --r-moyen: 18px 18px 18px 5px;
+  --r-petit: 14px 14px 14px 4px;
+  --trame: conic-gradient(from 90deg at 50% 50%, #0000 25%, var(--trame-teinte, #0f5846) 0 50%, #0000 0 75%, var(--trame-teinte, #0f5846) 0) 0 0 / 16px 16px;
+  --ombre: 0 1px 2px rgba(4, 33, 26, .05), 0 12px 28px -16px rgba(4, 33, 26, .22);
+  --ombre-forte: 0 2px 4px rgba(4, 33, 26, .06), 0 22px 44px -20px rgba(4, 33, 26, .32);
+}
+body { background: #dde4df; }
+@media (min-width: 520px) { body { background: #dde4df var(--trame); --trame-teinte: #d5ddd7; } }
+h1, h2 { letter-spacing: -.022em; }
+body { letter-spacing: 0; font-weight: 450; }
+strong { font-weight: 650; }
+
+/* Boutons et champs */
+.bouton {
+  background: var(--marine); color: var(--papier);
+  border-radius: var(--r-moyen);
+  font-family: var(--police-titre); font-weight: 650; letter-spacing: -.005em;
+  box-shadow: 0 12px 22px -14px rgba(4, 33, 26, .8);
+}
+.bouton:active { background: var(--nuit); }
+.bouton.discret { background: var(--surface); color: var(--marine); border: 1px solid #b9cdc3; box-shadow: none; }
+.bouton.discret:active { background: var(--ciel); }
+.champ .saisie { border: 1px solid #c9d6ce; border-radius: 16px 16px 16px 5px; }
+.champ .saisie:focus-within { border-color: var(--marine); box-shadow: 0 0 0 4px rgba(11, 74, 59, .13); }
+.champ > span, .libelle-groupe { font-weight: 650; }
+.message-erreur { border-radius: var(--r-petit); }
+
+/* Le fil indigo: liens et repères du parcours */
+.lien, .oubli a, .lien-inscription a { color: var(--indigo); }
+.progression i { background: #cdd8d1; }
+.progression i.fait { background: var(--marine); }
+.choix-type { border-radius: var(--r-moyen); border-color: #c9d6ce; }
+.choix-type[aria-checked="true"] { border-color: var(--marine); background: var(--ciel); box-shadow: 0 0 0 3px rgba(11, 74, 59, .14); }
+.choix-type[aria-checked="true"] .coche-radio { border-color: var(--marine); }
+.choix-type[aria-checked="true"] .coche-radio::after { background: var(--marine); }
+.recap { border-radius: var(--r-moyen); }
+:focus-visible { outline-color: var(--indigo); }
+
+/* Cartes */
+.action, .tuile-action, .groupe, .fiche, .bilan, .liste-produits, .apercu-code, .compte-carte, .connexion-corps {
+  border-radius: var(--r-carte);
+}
+.encart, .avis, .avis-courriel { border-radius: var(--r-moyen); }
+.pastille-icone, .action .tuile, .rang .pastille-icone { border-radius: var(--r-petit); background: var(--ciel); color: var(--marine); }
+.recent .pastille { border-radius: 12px 12px 12px 4px; }
+[data-op="statut"] .pastille-icone, [data-op="statut"] .tuile { background: var(--indigo-fond); color: var(--indigo); }
+.retour { border-radius: var(--r-petit); }
+.avatar { border-radius: var(--r-petit); background: var(--marine); }
+.compte-carte .avatar { border-radius: 26px 26px 26px 7px; }
+.annonce { border-radius: var(--r-moyen); }
+.rond { border-radius: var(--r-petit); }
+.puce { border-radius: 10px 10px 10px 3px; }
+.etat { border-radius: 10px 10px 10px 3px; }
+
+/* En-têtes sombres: la trame tissée, le DataMatrix en filigrane */
+.hero, .connexion-tete {
+  --trame-teinte: #14604d;
+  background: var(--marine);
+  isolation: isolate;
+}
+.hero::before, .connexion-tete::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; opacity: .55;
+  background: var(--trame);
+  -webkit-mask-image: linear-gradient(185deg, #000 0%, rgba(0, 0, 0, .15) 100%);
+  mask-image: linear-gradient(185deg, #000 0%, rgba(0, 0, 0, .15) 100%);
+}
+.hero { border-radius: 0 0 38px 10px; }
+.hero .motif {
+  inset: auto; right: -20px; top: -20px; width: 190px; height: 190px;
+  color: rgba(143, 224, 195, .26); opacity: 1; transform: rotate(8deg);
+  -webkit-mask-image: none; mask-image: none;
+}
+.hero .marque { font-family: var(--police-titre); font-weight: 650; font-size: 17px; letter-spacing: -.01em; }
+.hero svg.marque { color: var(--lueur); }
+.hero .avatar { background: rgba(143, 224, 195, .14); border: 1px solid rgba(143, 224, 195, .3); color: var(--lueur); backdrop-filter: none; }
+.hero .bonjour { color: #a9dccb; }
+.hero h1 { font-weight: 700; }
+.puce.claire { background: rgba(143, 224, 195, .14); color: var(--lueur); border: 1px solid rgba(143, 224, 195, .26); }
+
+/* Connexion: carte du Sénégal en points, le fil entre les villes */
+.connexion-tete { border-radius: 0 0 0 0; }
+.connexion-tete .carte {
+  position: absolute; z-index: -1; right: -30px; top: calc(env(safe-area-inset-top) + 6px);
+  width: min(76vw, 320px); height: auto;
+}
+.carte-points { fill: var(--lueur); fill-opacity: .45; }
+.carte-fil path { stroke: var(--lueur); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; stroke-opacity: .85; }
+.carte-villes circle { fill: var(--lueur); }
+.connexion-tete .marque { color: var(--lueur); }
+.connexion-tete h1 { font-weight: 700; }
+.connexion-tete p { color: #a9dccb; }
+.connexion-corps { border-radius: 30px 30px 30px var(--coin); }
+
+/* Action principale: la carte à trame, seul aplat sombre de l'accueil */
+.action.principale {
+  --trame-teinte: #0f5846;
+  position: relative; isolation: isolate; overflow: hidden;
+  background: var(--marine); color: var(--papier);
+  border-radius: 28px 28px 28px var(--coin);
+  box-shadow: 0 22px 40px -22px rgba(4, 33, 26, .8);
+}
+.action.principale::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; opacity: .5; background: var(--trame);
+  -webkit-mask-image: linear-gradient(120deg, #000 10%, rgba(0, 0, 0, .1) 100%);
+  mask-image: linear-gradient(120deg, #000 10%, rgba(0, 0, 0, .1) 100%);
+}
+.action.principale .tuile { background: var(--lueur); color: var(--nuit); border-radius: 18px 18px 18px 5px; box-shadow: none; }
+.action.principale strong { color: var(--papier); }
+.action.principale small { color: #b4e6d6; }
+.action.principale .fleche { background: var(--lueur); color: var(--nuit); border-radius: var(--r-petit); width: 40px; height: 40px; }
+.action strong, .tuile-action strong { font-weight: 650; }
+
+/* Barre du bas */
+.barre { border-radius: 26px 26px 26px 8px; }
+.onglet[aria-current="page"] { color: var(--marine); }
+.bouton-scan {
+  border-radius: 22px 22px 22px 6px; width: 66px; height: 66px;
+  background: var(--marine); color: var(--lueur);
+  box-shadow: 0 14px 24px -10px rgba(4, 33, 26, .7);
+}
+.bouton-scan:active { background: var(--nuit); }
+
+/* Feuille du bas */
+.feuille { border-radius: 30px 30px 0 0; }
+.feuille .poignee { background: #bccdc4; }
+
+/* Scanner */
+.scanner .repli { background: radial-gradient(circle at 50% 40%, #0f3a2f, #04211a 70%); }
+.consigne { border-radius: 12px 12px 12px 4px; }
+.position { border-radius: 10px 10px 10px 3px; }
+
+/* Résultat: le verdict se lit d'abord par la couleur, puis par le sceau */
+.resultat .haut { border-radius: 0 0 38px 10px; }
+.sceau {
+  width: 96px; height: 96px; border-radius: 34px 34px 34px 8px;
+  background: var(--teinte);
+  box-shadow: 0 0 0 10px rgba(255, 255, 255, .55), 0 18px 30px -12px var(--teinte);
+}
+.sceau::after { border-radius: inherit; }
+.resultat h1 { font-weight: 700; }
+.fiche .ligne:first-child { border-bottom-color: #bccdc4; }
+.fiche .ligne:first-child dd { font-family: var(--police-id); }
+.fiche .ligne:first-child dd.serie { font-weight: 650; font-size: 24px; letter-spacing: .01em; }
+.fiche dd.serie { font-family: var(--police-id); font-weight: 550; letter-spacing: .01em; }
+.fiche dd, .bilan strong, .recent small.id { font-variant-numeric: tabular-nums; }
+.bilan strong { font-family: var(--police-id); font-weight: 650; }
+.bilan .nul strong { color: #a9bdb4; }
+.recent small.id, .apercu-code .serie { font-family: var(--police-id); font-weight: 500; }
+.etat.vert { background: var(--ok-fond); color: #075c3c; }
+.etat.gris { background: #e1e8e3; color: #2a413b; }
+
+.resultat.alerte { --teinte: #b7791f; }
+
+/* Accueil: en-tête clair, pour que la carte sombre de l'action principale ressorte */
+.hero.clair {
+  --trame-teinte: #e6ece7;
+  background: var(--papier); color: var(--encre); border-radius: 0;
+  padding: calc(env(safe-area-inset-top) + 18px) 22px 8px;
+}
+.hero.clair::before { opacity: .45; -webkit-mask-image: radial-gradient(90% 80% at 100% 0%, #000 0%, transparent 70%); mask-image: radial-gradient(90% 80% at 100% 0%, #000 0%, transparent 70%); }
+.hero.clair .motif { color: rgba(11, 74, 59, .07); }
+.hero.clair .marque, .hero.clair svg.marque { color: var(--marine); }
+.hero.clair .avatar { background: var(--marine); border: 0; color: var(--lueur); font-family: var(--police-titre); }
+.hero.clair .hero-corps { margin-top: 22px; }
+.hero.clair .bonjour { color: var(--encre-douce); }
+.hero.clair h1 { color: var(--encre); font-size: 31px; }
+.hero.clair .puce.claire { background: var(--ciel); color: var(--marine); border: 0; }
+.hero.clair .puce.claire::before { background: var(--marine); box-shadow: none; }
+.hero.clair + .accueil-corps { margin-top: 18px; }

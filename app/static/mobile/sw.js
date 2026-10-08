@@ -1,8 +1,10 @@
 // Service worker: l'application s'ouvre même sans réseau (coque de l'application seulement).
 // Les appels à l'API ne sont jamais mis en cache. Le mode hors ligne des opérations viendra plus tard.
-const VERSION = "v14";
-const COQUE = ["./", "app.css", "app.js", "manifest.webmanifest", "icons/icone.svg",
-  "fonts/geist-latin-wght-normal.woff2", "fonts/geist-mono-latin-wght-normal.woff2"];
+const VERSION = "v15";
+const COQUE = ["./", "app.css", "app.js", "carte.js", "manifest.webmanifest", "icons/icone.svg",
+  "fonts/bricolage-grotesque-latin-wght-normal.woff2", "fonts/hanken-grotesk-latin-400-normal.woff2",
+  "fonts/hanken-grotesk-latin-500-normal.woff2", "fonts/hanken-grotesk-latin-600-normal.woff2",
+  "fonts/hanken-grotesk-latin-700-normal.woff2"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(COQUE)).then(() => self.skipWaiting()));

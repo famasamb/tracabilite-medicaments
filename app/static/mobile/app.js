@@ -2,6 +2,8 @@
 // Écrans: connexion (fiche 1), accueil, réception et expédition (fiche 7), dispensation (fiche 8),
 // statut d'une unité (fiche 9), compte. Tout passe par l'API, sur la même adresse que cette page.
 
+import { carte } from "./carte.js";
+
 const racine = document.getElementById("appli");
 
 /* ------------------------------------------------------------------ Données du métier */
@@ -91,25 +93,16 @@ const ICONES = {
 };
 const icone = (nom, taille = 24) => ICONES[nom](taille);
 
-// Le motif de l'application: un DataMatrix (bord gauche et bas pleins, bord haut et droit en pointillés)
+// La marque: les quatre coins d'un scan autour d'une pilule dont une moitié se découpe en modules de code
 function marque(taille = 32) {
-  return `<svg class="marque" width="${taille}" height="${taille}" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3.2" aria-hidden="true">
-    <path d="M4.5 4.5v23h23"/><path d="M4.5 4.5h23" stroke-dasharray="3.6 3.6"/><path d="M27.5 4.5v23" stroke-dasharray="3.6 3.6"/>
-    <path d="M11 11h4v4h-4zM17 17h4v4h-4z" fill="currentColor" stroke="none"/></svg>`;
+  return `<svg class="marque" width="${taille}" height="${taille}" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+    <path d="M10 21V10h11M43 10h11v11M54 43v11H43M21 54H10V43" stroke="currentColor" stroke-width="4" stroke-linecap="square"/>
+    <g transform="rotate(-45 32 32)" fill="currentColor"><path d="M35 24H25a8 8 0 0 0 0 16h10z"/><rect x="37.0" y="24.0" width="4.2" height="4.2" /><rect x="37.0" y="29.8" width="4.2" height="4.2" /><rect x="37.0" y="35.6" width="4.2" height="4.2" /><rect x="42.8" y="24.0" width="4.2" height="4.2" /><rect x="42.8" y="29.8" width="4.2" height="4.2" /><rect x="48.6" y="24.0" width="4.2" height="4.2" /></g></svg>`;
 }
 
-// Texture de modules DataMatrix pour l'en-tête de connexion (suite pseudo-aléatoire fixe, donc stable)
+// Le motif de l'application: un DataMatrix en filigrane (la trame est dessinée en CSS)
 function motif() {
-  let graine = 7, rects = "";
-  const alea = () => (graine = (graine * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
-  const colonnes = 22, lignes = 16, c = 18;
-  for (let y = 0; y < lignes; y++) {
-    for (let x = 0; x < colonnes; x++) {
-      const proba = 0.62 - y * 0.034 + (x > 11 ? 0.05 : 0);
-      if (alea() < proba) rects += `<rect x="${x * c}" y="${y * c}" width="${c - 5}" height="${c - 5}" rx="1.5" opacity="${(0.25 + alea() * 0.75).toFixed(2)}"/>`;
-    }
-  }
-  return `<svg class="motif" viewBox="0 0 ${colonnes * c} ${lignes * c}" preserveAspectRatio="xMidYMin slice" fill="currentColor" aria-hidden="true">${rects}</svg>`;
+  return `<svg class="motif" viewBox="0 0 16 16" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true"><path d="M0 0h1v1h-1zM2 0h1v1h-1zM4 0h1v1h-1zM6 0h1v1h-1zM8 0h1v1h-1zM10 0h1v1h-1zM12 0h1v1h-1zM14 0h1v1h-1zM15 0h1v1h-1zM0 1h1v1h-1zM1 1h1v1h-1zM2 1h1v1h-1zM4 1h1v1h-1zM6 1h1v1h-1zM7 1h1v1h-1zM9 1h1v1h-1zM10 1h1v1h-1zM11 1h1v1h-1zM12 1h1v1h-1zM13 1h1v1h-1zM0 2h1v1h-1zM1 2h1v1h-1zM2 2h1v1h-1zM6 2h1v1h-1zM8 2h1v1h-1zM10 2h1v1h-1zM11 2h1v1h-1zM12 2h1v1h-1zM13 2h1v1h-1zM15 2h1v1h-1zM0 3h1v1h-1zM1 3h1v1h-1zM4 3h1v1h-1zM6 3h1v1h-1zM7 3h1v1h-1zM8 3h1v1h-1zM10 3h1v1h-1zM11 3h1v1h-1zM13 3h1v1h-1zM14 3h1v1h-1zM0 4h1v1h-1zM3 4h1v1h-1zM8 4h1v1h-1zM10 4h1v1h-1zM11 4h1v1h-1zM13 4h1v1h-1zM14 4h1v1h-1zM15 4h1v1h-1zM0 5h1v1h-1zM1 5h1v1h-1zM6 5h1v1h-1zM10 5h1v1h-1zM13 5h1v1h-1zM0 6h1v1h-1zM1 6h1v1h-1zM6 6h1v1h-1zM7 6h1v1h-1zM9 6h1v1h-1zM10 6h1v1h-1zM11 6h1v1h-1zM12 6h1v1h-1zM13 6h1v1h-1zM15 6h1v1h-1zM0 7h1v1h-1zM1 7h1v1h-1zM2 7h1v1h-1zM3 7h1v1h-1zM5 7h1v1h-1zM6 7h1v1h-1zM11 7h1v1h-1zM12 7h1v1h-1zM13 7h1v1h-1zM0 8h1v1h-1zM2 8h1v1h-1zM3 8h1v1h-1zM4 8h1v1h-1zM5 8h1v1h-1zM6 8h1v1h-1zM8 8h1v1h-1zM9 8h1v1h-1zM10 8h1v1h-1zM11 8h1v1h-1zM15 8h1v1h-1zM0 9h1v1h-1zM4 9h1v1h-1zM9 9h1v1h-1zM10 9h1v1h-1zM11 9h1v1h-1zM13 9h1v1h-1zM14 9h1v1h-1zM0 10h1v1h-1zM1 10h1v1h-1zM2 10h1v1h-1zM3 10h1v1h-1zM4 10h1v1h-1zM5 10h1v1h-1zM6 10h1v1h-1zM7 10h1v1h-1zM8 10h1v1h-1zM9 10h1v1h-1zM12 10h1v1h-1zM13 10h1v1h-1zM14 10h1v1h-1zM15 10h1v1h-1zM0 11h1v1h-1zM1 11h1v1h-1zM2 11h1v1h-1zM5 11h1v1h-1zM6 11h1v1h-1zM7 11h1v1h-1zM8 11h1v1h-1zM9 11h1v1h-1zM10 11h1v1h-1zM12 11h1v1h-1zM13 11h1v1h-1zM0 12h1v1h-1zM2 12h1v1h-1zM4 12h1v1h-1zM9 12h1v1h-1zM10 12h1v1h-1zM11 12h1v1h-1zM15 12h1v1h-1zM0 13h1v1h-1zM1 13h1v1h-1zM2 13h1v1h-1zM9 13h1v1h-1zM11 13h1v1h-1zM12 13h1v1h-1zM13 13h1v1h-1zM14 13h1v1h-1zM0 14h1v1h-1zM1 14h1v1h-1zM4 14h1v1h-1zM8 14h1v1h-1zM9 14h1v1h-1zM10 14h1v1h-1zM11 14h1v1h-1zM12 14h1v1h-1zM15 14h1v1h-1zM0 15h1v1h-1zM1 15h1v1h-1zM2 15h1v1h-1zM3 15h1v1h-1zM4 15h1v1h-1zM5 15h1v1h-1zM6 15h1v1h-1zM7 15h1v1h-1zM8 15h1v1h-1zM9 15h1v1h-1zM10 15h1v1h-1zM11 15h1v1h-1zM12 15h1v1h-1zM13 15h1v1h-1zM14 15h1v1h-1zM15 15h1v1h-1z"/></svg>`;
 }
 
 /* ------------------------------------------------------------------ État et stockage */
@@ -246,11 +239,11 @@ function vueConnexion(erreur = "") {
   racine.innerHTML = `
     <div class="connexion">
     <header class="connexion-tete">
-      ${motif()}
+      ${carte()}
       <div class="contenu">
-        ${marque(38)}
+        ${marque(46)}
         <h1>Traçabilité des médicaments</h1>
-        <p>Suivez chaque unité, de la fabrication à la dispensation.</p>
+        <p>De la fabrication à la dispensation.</p>
       </div>
     </header>
     <main class="connexion-corps">
@@ -389,7 +382,7 @@ function vueAccueil() {
         avatar: `<button class="avatar" data-aller="#/compte" aria-label="Mon compte">${echapper(initiales(p.nom))}</button>`,
         titre: `<div class="hero-corps"><div class="bonjour">Bonjour, ${echapper(p.nom)}</div>
           <h1>${echapper(p.structure_nom)}</h1>
-          <span class="puce claire">${TYPES_STRUCTURE[p.structure_type] || p.structure_type}</span></div>` })}
+          <span class="puce claire">${TYPES_STRUCTURE[p.structure_type] || p.structure_type}</span></div>` }, "clair")}
       <div class="accueil-corps">
         ${ops.length ? `<div class="actions">${ligneAction(principale, true)}</div>
         ${autres.length ? `<div class="tuiles">${autres.map(tuileAction).join("")}</div>` : ""}` : ""}

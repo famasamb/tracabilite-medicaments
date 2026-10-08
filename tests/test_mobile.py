@@ -37,9 +37,18 @@ def test_le_manifeste_decrit_une_application_installable(client):
 def test_les_polices_sont_embarquees_pour_fonctionner_sans_reseau(client):
     css = client.get(ADRESSE + "app.css").text
     polices = re.findall(r'url\("([^"]+\.woff2)"\)', css)
-    assert len(polices) == 2
+    assert len(polices) == 5  # Bricolage Grotesque et Hanken Grotesk (4 graisses)
     for police in polices:
         assert client.get(ADRESSE + police).status_code == 200
+
+
+def test_tout_ce_que_le_service_worker_met_en_cache_existe(client):
+    sw = client.get(ADRESSE + "sw.js").text
+    coque = re.search(r"const COQUE = \[(.*?)\];", sw, re.S).group(1)
+    fichiers = re.findall(r'"([^"]+)"', coque)
+    assert "carte.js" in fichiers
+    for fichier in fichiers:
+        assert client.get(ADRESSE + fichier).status_code == 200, fichier
 
 
 def test_le_service_worker_est_servi_et_l_api_n_est_pas_touchee(client):

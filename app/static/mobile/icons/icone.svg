@@ -1,10 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs><linearGradient id="f" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0f6a55"/><stop offset="1" stop-color="#042a22"/></linearGradient></defs>
-  <rect width="512" height="512" rx="112" fill="url(#f)"/>
-  <g fill="none" stroke="#ffffff" stroke-width="40">
-    <path d="M136 136v240h240"/>
-    <path d="M136 136h240" stroke-dasharray="40 40"/>
-    <path d="M376 136v240" stroke-dasharray="40 40"/>
-  </g>
-  <g fill="#7fe0c0"><rect x="204" y="204" width="52" height="52"/><rect x="288" y="204" width="52" height="52" opacity=".55"/><rect x="204" y="288" width="52" height="52" opacity=".55"/><rect x="288" y="288" width="52" height="52"/></g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#0b4a3b"/><g><g fill="none" stroke="#8fe0c3" stroke-width="4" stroke-linecap="square"><path d="M10 21V10h11M43 10h11v11M54 43v11H43M21 54H10V43"/></g><g transform="rotate(-45 32 32)"><path d="M35 24H25a8 8 0 0 0 0 16h10z" fill="#8fe0c3"/><rect x="37.0" y="24.0" width="4.2" height="4.2" fill="#8fe0c3"/><rect x="37.0" y="29.8" width="4.2" height="4.2" fill="#8fe0c3"/><rect x="37.0" y="35.6" width="4.2" height="4.2" fill="#8fe0c3"/><rect x="42.8" y="24.0" width="4.2" height="4.2" fill="#8fe0c3"/><rect x="42.8" y="29.8" width="4.2" height="4.2" fill="#8fe0c3"/><rect x="48.6" y="24.0" width="4.2" height="4.2" fill="#8fe0c3"/></g></g></svg>
