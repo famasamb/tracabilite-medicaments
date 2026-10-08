@@ -1,4 +1,5 @@
 """Numeros de serie et codes 2D (DataMatrix GS1) pour la serialisation d'un lot."""
+import re
 import secrets
 from datetime import date
 
@@ -58,10 +59,36 @@ def construire_contenu(gtin: str | None, id_produit: str, numero_lot: str,
     return f"(17){peremption}(10){numero_lot}(21){numero_serie}(91){id_produit}"
 
 
-def generer_image_code(contenu: str, echelle: int = 8) -> bytes:
-    """Fabrique l'image PNG d'un code DataMatrix GS1 a imprimer sur la boite."""
+def _lignes_lisibles(contenu: str) -> list[str]:
+    """Texte lisible sous le code (norme GS1): une ligne par identifiant d'application, ex. (21)ABC123."""
+    return [f"({ai}){valeur}" for ai, valeur in re.findall(r"\((\d{2,4})\)([^(]*)", contenu)]
+
+
+def _ajouter_texte(image: np.ndarray, lignes: list[str]) -> np.ndarray:
+    """Ajoute, sous le code, une marge blanche portant les lignes de texte lisible par une personne."""
+    police, epaisseur = cv2.FONT_HERSHEY_SIMPLEX, 2
+    largeur = image.shape[1]
+    echelle = 1.0
+    while echelle > 0.4 and max(cv2.getTextSize(t, police, echelle, epaisseur)[0][0] for t in lignes) > largeur - 24:
+        echelle -= 0.05
+    hauteur_ligne = int(cv2.getTextSize("Ag", police, echelle, epaisseur)[0][1] * 1.9)
+    marge = np.full((hauteur_ligne * len(lignes) + 16, largeur), 255, dtype=np.uint8)
+    for i, texte in enumerate(lignes):
+        cv2.putText(marge, texte, (12, 8 + hauteur_ligne * (i + 1) - hauteur_ligne // 4), police, echelle, 0, epaisseur, cv2.LINE_AA)
+    return np.vstack([image, marge])
+
+
+def generer_image_code(contenu: str, echelle: int = 8, avec_texte: bool = False) -> bytes:
+    """Fabrique l'image PNG d'un code DataMatrix GS1 a imprimer sur la boite.
+
+    Avec avec_texte=True, le contenu est aussi ecrit en clair sous le code, comme sur une vraie etiquette:
+    c'est ce que lit une personne quand elle doit saisir le numero de serie a la main."""
     code = zxingcpp.create_barcode(contenu, zxingcpp.BarcodeFormat.DataMatrix, gs1=True)
     image = np.array(code.to_image(scale=echelle))
+    if avec_texte:
+        if image.ndim == 3:
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        image = _ajouter_texte(image, _lignes_lisibles(contenu))
     ok, png = cv2.imencode(".png", image)
     if not ok:
         raise RuntimeError("impossible de fabriquer l'image du code")

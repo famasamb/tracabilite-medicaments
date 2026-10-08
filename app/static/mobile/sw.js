@@ -1,6 +1,6 @@
 // Service worker: l'application s'ouvre même sans réseau (coque de l'application seulement).
 // Les appels à l'API ne sont jamais mis en cache. Le mode hors ligne des opérations viendra plus tard.
-const VERSION = "v3";
+const VERSION = "v4";
 const COQUE = ["./", "app.css", "app.js", "manifest.webmanifest", "icons/icone.svg",
   "fonts/geist-latin-wght-normal.woff2", "fonts/geist-mono-latin-wght-normal.woff2"];
 

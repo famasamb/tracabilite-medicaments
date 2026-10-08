@@ -64,7 +64,7 @@ def serialiser_lot(donnees: LotEntree,
         for n in numeros:
             contenu = construire_contenu(produit.gtin, produit.id, lot.numeroLot,
                                          lot.datePeremption, n)
-            zf.writestr(f"{n}.png", generer_image_code(contenu))
+            zf.writestr(f"{n}.png", generer_image_code(contenu, avec_texte=True))
     nom_fichier = f"codes_{lot.numeroLot}.zip"
     return Response(content=archive.getvalue(), media_type="application/zip", status_code=201,
                     headers={"Content-Disposition": f'attachment; filename="{nom_fichier}"',

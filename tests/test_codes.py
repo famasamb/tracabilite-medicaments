@@ -67,3 +67,12 @@ def test_image_sans_code_renvoie_none():
     import numpy as np, cv2
     ok, png = cv2.imencode(".png", np.full((100, 100), 255, dtype=np.uint8))
     assert lire_code(png.tobytes()) is None
+
+
+def test_le_texte_sous_le_code_ne_gene_pas_la_lecture_et_porte_le_numero_de_serie():
+    contenu = construire_contenu("03400930000021", "p1", "LOT-001", date(2030, 12, 31), "ABC123DEF456")
+    sans, avec = generer_image_code(contenu), generer_image_code(contenu, avec_texte=True)
+    assert lire_code(avec) == contenu
+    assert len(avec) > len(sans)  # la marge de texte ajoute des lignes a l'image
+    from app.codes import _lignes_lisibles
+    assert _lignes_lisibles(contenu) == ["(01)03400930000021", "(17)301231", "(10)LOT-001", "(21)ABC123DEF456"]

@@ -570,7 +570,7 @@ function vueScanner(op) {
   function ouvrirSaisie() {
     const f = document.createElement("div");
     f.innerHTML = `<div class="voile"></div><form class="feuille" aria-label="Saisie du numéro de série" novalidate>
-      <div class="poignee"></div><h2>Numéro de série</h2><p class="aide">Saisissez le numéro de série de l'unité.</p>
+      <div class="poignee"></div><h2>Numéro de série</h2><p class="aide">Le numéro de série est écrit sous le code, après <strong>(21)</strong>. Recopiez ce qui suit, sans les parenthèses.</p>
       <label class="champ"><span class="visuel-seulement">Numéro de série</span><div class="saisie"><input name="serie" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" required></div></label>
       <div class="actions-bas" style="display:grid;gap:10px"><button class="bouton" type="submit">${op === "statut" ? "Vérifier" : "Valider"}</button>
       <button class="bouton discret" type="button" data-action="annuler">Annuler</button></div></form>`;
