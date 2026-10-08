@@ -667,7 +667,7 @@ function vueScanner(op) {
     document.body.appendChild(chargement);
     const f = new FormData();
     if (op === "reception" || op === "expedition") f.append("typeOperation", op);
-    if (fichier) f.append("image", fichier, fichier.name || "code.jpg");
+    if (fichier) { const envoye = await reduireImage(fichier); f.append("image", envoye, envoye.name || "code.jpg"); }
     if (serie) f.append("numeroSerie", serie);
     if (position && op !== "statut") { f.append("latitude", position.latitude); f.append("longitude", position.longitude); }
     try {
@@ -749,6 +749,27 @@ function vueScanner(op) {
     lampe = !lampe;
     try { await flux.getVideoTracks()[0].applyConstraints({ advanced: [{ torch: lampe }] }); ev.currentTarget.setAttribute("aria-pressed", String(lampe)); } catch { lampe = !lampe; }
   });
+}
+
+// Une photo prise avec l'appareil du telephone peut depasser la limite du serveur (5 Mo): on la reduit avant l'envoi.
+// Une photo deja assez legere part telle quelle, sans perte. Le cote le plus long garde 2560 pixels: un code reste lisible.
+const POIDS_MAX_PHOTO = 4 * 1024 * 1024;
+const COTE_MAX_PHOTO = 2560;
+async function reduireImage(fichier) {
+  if (!fichier || fichier.size <= POIDS_MAX_PHOTO) return fichier;
+  try {
+    const image = await createImageBitmap(fichier, { imageOrientation: "from-image" });
+    const echelle = Math.min(1, COTE_MAX_PHOTO / Math.max(image.width, image.height));
+    const toile = document.createElement("canvas");
+    toile.width = Math.round(image.width * echelle); toile.height = Math.round(image.height * echelle);
+    toile.getContext("2d").drawImage(image, 0, 0, toile.width, toile.height);
+    image.close?.();
+    for (let qualite = 0.92; qualite > 0.5; qualite -= 0.12) {
+      const blob = await new Promise((r) => toile.toBlob(r, "image/jpeg", qualite));
+      if (blob && blob.size <= POIDS_MAX_PHOTO) return new File([blob], "code.jpg", { type: "image/jpeg" });
+    }
+  } catch { /* navigateur sans createImageBitmap, ou image illisible: on envoie l'originale */ }
+  return fichier;
 }
 
 /* ------------------------------------------------------------------ Résultat */
