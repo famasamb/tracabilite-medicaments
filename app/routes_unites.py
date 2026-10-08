@@ -51,4 +51,5 @@ async def consulter_statut(
             latitude=dernier.latitude, longitude=dernier.longitude) if dernier else None,
         anomalie=AnomalieAssociee(
             typeAnomalie=anomalie.typeAnomalie, statut=anomalie.statut,
-            dateDetection=anomalie.dateDetection) if anomalie else None)
+            dateDetection=anomalie.dateDetection) if anomalie else None,
+        methodeLecture=getattr(unite, "methode_lecture", None))

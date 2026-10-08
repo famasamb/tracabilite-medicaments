@@ -68,4 +68,5 @@ async def enregistrer_dispensation(
     return EvenementSortie(id=evenement.id, numeroSerie=evenement.numeroSerie,
                            typeOperation=evenement.typeOperation, dateHeure=evenement.dateHeure,
                            latitude=evenement.latitude, longitude=evenement.longitude,
-                           alerte=alerte, message=message)
+                           alerte=alerte, message=message,
+                           methodeLecture=getattr(unite, "methode_lecture", None))

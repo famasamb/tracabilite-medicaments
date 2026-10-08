@@ -1,16 +1,19 @@
 """Cas d'utilisation Enregistrer la reception / Enregistrer l'expedition (fiche 7)."""
+import logging
 import re
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
+from starlette.concurrency import run_in_threadpool
 
 from .auth import utilisateur_courant
-from .codes import lire_code
+from .lecture import lire_hybride
 from .db import get_db
 from .models import (Anomalie, Evenement, StatutUnite, TypeAnomalie, TypeOperation,
                      TypeStructure, Unite, Utilisateur)
 from .schemas import EvenementSortie
 
+journal = logging.getLogger("tracabilite.lecture")
 router = APIRouter(prefix="/evenements", tags=["Evenements"])
 
 TAILLE_MAX_IMAGE = 5 * 1024 * 1024  # 5 Mo
@@ -37,14 +40,18 @@ async def obtenir_unite(db: Session, image: UploadFile | None, numero_serie: str
     """
     saisie = numero_serie.strip() if numero_serie else None
     identifiant = None
+    methode = None
     if image is not None:
         contenu = await image.read(TAILLE_MAX_IMAGE + 1)
         if len(contenu) > TAILLE_MAX_IMAGE:
             raise HTTPException(413, "Image trop volumineuse (5 Mo maximum).")
-        texte = lire_code(contenu)
-        identifiant = extraire_numero_serie(texte) if texte else None
+        lecture = await run_in_threadpool(lire_hybride, contenu)   # classique, puis deep learning si besoin
+        identifiant = extraire_numero_serie(lecture.texte) if lecture.texte else None
+        methode = lecture.methode if identifiant else None
+        journal.info("Lecture du code: %s", methode or "echec")
     if identifiant is None:
         identifiant = saisie
+        methode = "saisie" if saisie else None
     if identifiant is None:
         if image is None:
             raise HTTPException(422, "Envoyez l'image du code ou saisissez le numero de serie.")
@@ -53,6 +60,7 @@ async def obtenir_unite(db: Session, image: UploadFile | None, numero_serie: str
     unite = db.get(Unite, identifiant)
     if unite is None:
         raise HTTPException(404, "Identifiant inconnu: aucune unite serialisee avec ce numero.")
+    unite.methode_lecture = methode   # information de la requete en cours, non enregistree en base
     return unite
 
 
@@ -94,4 +102,5 @@ async def enregistrer_evenement(
     return EvenementSortie(id=evenement.id, numeroSerie=evenement.numeroSerie,
                            typeOperation=evenement.typeOperation, dateHeure=evenement.dateHeure,
                            latitude=evenement.latitude, longitude=evenement.longitude,
-                           alerte=alerte, message=message)
+                           alerte=alerte, message=message,
+                           methodeLecture=getattr(unite, "methode_lecture", None))

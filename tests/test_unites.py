@@ -9,7 +9,7 @@ def test_unite_neuve_active_sans_evenement_ni_anomalie(client):
     r = client.post("/unites/statut", headers=fabricant, files={"image": ("code.png", png, "image/png")})
     assert r.status_code == 200
     assert r.json() == {"numeroSerie": serie, "statut": "active",
-                        "dernierEvenement": None, "anomalie": None}
+                        "dernierEvenement": None, "anomalie": None, "methodeLecture": "classique"}
 
 
 def test_le_dernier_evenement_est_le_plus_recent(client):

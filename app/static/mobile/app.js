@@ -51,6 +51,7 @@ const ANOMALIES = {
   trajetInhabituel: "Trajet inhabituel",
   concentrationInhabituelle: "Concentration inhabituelle",
 };
+const LECTURES = { classique: "Lecture classique", deep_learning: "Retrouvé par l'IA (YOLOv8)", saisie: "Saisie manuelle" };
 const AVIS = "Une alerte est un signal à faire vérifier par une personne, pas une fraude confirmée.";
 
 /* ------------------------------------------------------------------ Icônes */
@@ -777,6 +778,7 @@ function vueResultat() {
   lignes.push(ligne("Date", dateLongue(r.donnees ? r.donnees.dateHeure : r.date)));
   const avecPosition = r.donnees ? r.donnees.latitude != null : r.position;
   lignes.push(ligne("Position", avecPosition ? "Enregistrée" : "Non transmise"));
+  if (r.donnees && r.donnees.methodeLecture) lignes.push(ligne("Lecture", LECTURES[r.donnees.methodeLecture] || echapper(r.donnees.methodeLecture)));
   racine.innerHTML = `<main class="resultat ${genre}">
     <div class="haut"><div class="sceau" aria-hidden="true">${symbole}</div>
       <h1 role="status">${titre}</h1><p class="sous-titre">${sous}</p></div>
@@ -805,6 +807,7 @@ function vueStatut(r) {
   if (dernier && dernier.latitude != null) {
     lignes.push(ligne("Lieu", `<a href="https://www.openstreetmap.org/?mlat=${dernier.latitude}&mlon=${dernier.longitude}#map=15/${dernier.latitude}/${dernier.longitude}" target="_blank" rel="noopener" style="color:var(--pin)">Voir sur la carte</a>`));
   }
+  if (s.methodeLecture) lignes.push(ligne("Lecture", LECTURES[s.methodeLecture] || echapper(s.methodeLecture)));
   if (anomalie) lignes.push(ligne("Anomalie", `<span class="etat ambre">${ANOMALIES[anomalie.typeAnomalie] || anomalie.typeAnomalie}</span><br><small style="font-weight:500;color:var(--encre-douce)">${anomalie.statut === "a_verifier" ? "À vérifier" : echapper(anomalie.statut)} · ${dateLongue(anomalie.dateDetection)}</small>`));
   racine.innerHTML = `<main class="resultat ${genre}">
     <div class="haut"><div class="sceau" aria-hidden="true">${symbole}</div>

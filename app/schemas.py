@@ -144,6 +144,7 @@ class EvenementSortie(BaseModel):
     longitude: float | None
     alerte: bool
     message: str
+    methodeLecture: str | None = None   # classique, deep_learning ou saisie
 
 
 class DernierEvenement(BaseModel):
@@ -164,6 +165,7 @@ class StatutUniteSortie(BaseModel):
     statut: StatutUnite
     dernierEvenement: DernierEvenement | None
     anomalie: AnomalieAssociee | None
+    methodeLecture: str | None = None
 
 
 class SRSortie(BaseModel):
