@@ -130,7 +130,7 @@ function fermerSession() {
 const cleRecents = () => `recents:${etat.profil.id}`;
 function recents() { return lire(cleRecents()) || []; }
 function noterRecent(entree) {
-  const liste = [entree, ...recents()].slice(0, 20);
+  const liste = [entree, ...recents()].slice(0, 200);
   ecrire(cleRecents(), liste);
 }
 
@@ -245,6 +245,8 @@ function vueConnexion(erreur = "") {
       </div>
     </header>
     <main class="connexion-corps">
+      <h2 class="connexion-titre">Se connecter</h2>
+      <p class="connexion-aide">Utilisez l'identifiant donné par le responsable de votre structure.</p>
       <form id="formulaire" novalidate>
         <div id="erreur" role="alert">${erreur ? blocErreur(erreur) : ""}</div>
         <label class="champ"><span>Identifiant de connexion</span>
@@ -347,36 +349,62 @@ function gestion() {
 }
 
 function ligneGestion(g) {
-  return `<button class="action" data-aller="${g.vers}">
-    <span class="tuile">${icone(g.icone, 26)}</span>
+  return `<button class="rang" data-aller="${g.vers}">
+    <span class="pastille-icone">${icone(g.icone, 22)}</span>
     <span class="texte"><strong>${g.titre}</strong><small>${g.resume}</small></span>
-    <span class="fleche">${icone("fleche", 20)}</span></button>`;
+    <span class="fleche">${icone("fleche", 18)}</span></button>`;
+}
+
+function tuileAction(op) {
+  const o = OPERATIONS[op];
+  return `<button class="tuile-action" data-op="${op}">
+    <span class="pastille-icone">${icone(o.icone, 24)}</span>
+    <span class="texte"><strong>${o.titre}</strong><small>${o.resume}</small></span></button>`;
+}
+
+// En-tête sombre des pages d'accueil et de compte
+function heros(haut, corps, classe = "") {
+  return `<header class="hero ${classe}">${motif()}
+    <div class="hero-haut"><span class="marque">${marque(26)}${haut}</span>${corps.avatar || ""}</div>
+    ${corps.titre || ""}</header>`;
 }
 
 function vueAccueil() {
   const p = etat.profil, ops = operationsScan(), principale = PRINCIPALE[p.structure_type];
   const liste = ops.length ? recents().slice(0, 5) : [], outils = gestion();
+  const autres = ops.filter((o) => o !== principale);
   racine.innerHTML = `
-    <main class="page">
-      <header class="entete"><span class="marque">${marque(28)}Traçabilité</span>
-        <button class="avatar" data-aller="#/compte" aria-label="Mon compte">${echapper(initiales(p.nom))}</button></header>
-      <section class="accueil-titre">
-        <div class="bonjour">Bonjour, ${echapper(p.nom)}</div>
-        <h1>${echapper(p.structure_nom)}</h1>
-        <span class="puce">${TYPES_STRUCTURE[p.structure_type] || p.structure_type}</span>
-      </section>
-      ${ops.length ? `<h2 class="section-titre">Que voulez-vous faire ?</h2>
-      <div class="actions">${ops.map((o) => ligneAction(o, o === principale)).join("")}</div>` : ""}
-      ${outils.length ? `<h2 class="section-titre">Gestion</h2><div class="actions">${outils.map(ligneGestion).join("")}</div>` : ""}
-      ${p.structure_type === "PNA" ? '<p class="encart">Le suivi du circuit public (carte et alertes) se consulte dans la vue SIG.</p>' : ""}
-      ${ops.length ? `<h2 class="section-titre">Récents sur cet appareil</h2>
-      ${liste.length ? `<div class="recents">${liste.map(ligneRecent).join("")}</div>`
-        : `<div class="recents"><div class="vide"><strong>Aucune opération pour l'instant</strong>Les unités que vous scannez apparaîtront ici.</div></div>`}
-      ${liste.length ? '<p class="mention">Appuyez sur une unité pour revoir son statut. Liste conservée sur cet appareil seulement.</p>' : ""}` : ""}
+    <main class="accueil">
+      ${heros("Traçabilité", {
+        avatar: `<button class="avatar" data-aller="#/compte" aria-label="Mon compte">${echapper(initiales(p.nom))}</button>`,
+        titre: `<div class="hero-corps"><div class="bonjour">Bonjour, ${echapper(p.nom)}</div>
+          <h1>${echapper(p.structure_nom)}</h1>
+          <span class="puce claire">${TYPES_STRUCTURE[p.structure_type] || p.structure_type}</span></div>` })}
+      <div class="accueil-corps">
+        ${ops.length ? `<div class="actions">${ligneAction(principale, true)}</div>
+        ${autres.length ? `<div class="tuiles">${autres.map(tuileAction).join("")}</div>` : ""}` : ""}
+        ${outils.length ? `<h2 class="section-titre">Gestion</h2><div class="groupe">${outils.map(ligneGestion).join("")}</div>` : ""}
+        ${p.structure_type === "PNA" ? '<p class="encart">Le suivi du circuit public (carte et alertes) se consulte dans la vue SIG.</p>' : ""}
+        ${ops.length ? `<h2 class="section-titre">Récents sur cet appareil</h2>
+        ${bilanDuJour()}
+        ${liste.length ? `<div class="groupe">${liste.map(ligneRecent).join("")}</div>`
+          : `<div class="groupe"><div class="vide"><strong>Aucune opération pour l'instant</strong>Les unités que vous scannez apparaîtront ici.</div></div>`}
+        ${liste.length ? '<p class="mention">Appuyez sur une unité pour revoir son statut. Liste conservée sur cet appareil seulement.</p>' : ""}` : ""}
+      </div>
     </main>${barre("accueil")}`;
   brancherBarre();
   racine.querySelectorAll("[data-op]").forEach((b) => b.addEventListener("click", () => aller(`#/scan/${b.dataset.op}`)));
   racine.querySelectorAll("[data-serie]").forEach((b) => b.addEventListener("click", () => verifierRecent(b.dataset.serie)));
+}
+
+// Chiffres du jour, calculés sur les opérations scannées depuis cet appareil
+function bilanDuJour() {
+  const aujourdhui = new Date().toDateString();
+  const jour = recents().filter((r) => date(r.date).toDateString() === aujourdhui);
+  if (!jour.length) return "";
+  const n = (issue) => jour.filter((r) => r.issue === issue).length;
+  const cellule = (classe, valeur, libelle) => `<div class="${classe}${valeur ? "" : " nul"}"><strong>${valeur}</strong><span>${libelle}</span></div>`;
+  return `<div class="bilan" aria-label="Aujourd'hui sur cet appareil">${cellule("ok", n("ok"), "Enregistrées")}${cellule("alerte", n("alerte"), "À vérifier")}${cellule("refus", n("refus"), "Refusées")}</div>`;
 }
 
 function ligneRecent(r) {
@@ -385,7 +413,7 @@ function ligneRecent(r) {
   const mot = { ok: "Enregistrée", alerte: "À vérifier", refus: "Refusée" }[r.issue];
   const symbole = icone({ ok: "coche", alerte: "attention", refus: "croix" }[r.issue], 20);
   const interieur = `<span class="pastille ${classe}">${symbole}</span>
-    <span class="texte"><strong>${o.titre}</strong><small>${echapper(r.serie)}</small></span>
+    <span class="texte"><strong>${o.titre}</strong><small class="id">${echapper(r.serie)}</small></span>
     <span class="droite"><strong class="${classe}">${mot}</strong><time>${ilYA(r.date)}</time></span>`;
   // Une unité dont on connaît le numéro de série peut être revérifiée d'un appui
   return r.serie && r.serie !== "Code scanné"
@@ -423,12 +451,14 @@ function annoncer(texte) {
 
 function vueCompte() {
   const p = etat.profil;
-  racine.innerHTML = `<main class="page">
-    <header class="entete"><span class="marque">${marque(28)}Compte</span></header>
-    <section class="compte-carte"><div class="avatar">${echapper(initiales(p.nom))}</div>
-      <h2>${echapper(p.nom)}</h2><p>${echapper(p.fonction)}</p>
-      <p>${echapper(p.structure_nom)}</p><span class="puce">${TYPES_STRUCTURE[p.structure_type] || p.structure_type}</span></section>
-    <div style="margin-top:20px"><button class="bouton discret" data-action="sortir">${icone("deconnexion", 20)}Se déconnecter</button></div>
+  racine.innerHTML = `<main class="accueil">
+    ${heros("Compte", {}, "court")}
+    <div class="accueil-corps">
+      <section class="compte-carte"><div class="avatar">${echapper(initiales(p.nom))}</div>
+        <h2>${echapper(p.nom)}</h2><p>${echapper(p.fonction)}</p>
+        <p>${echapper(p.structure_nom)}</p><span class="puce">${TYPES_STRUCTURE[p.structure_type] || p.structure_type}</span></section>
+      <div style="margin-top:20px"><button class="bouton discret" data-action="sortir">${icone("deconnexion", 20)}Se déconnecter</button></div>
+    </div>
   </main>${barre("compte")}`;
   brancherBarre();
   racine.querySelector('[data-action="sortir"]').addEventListener("click", fermerSession);
