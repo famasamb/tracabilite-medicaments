@@ -47,3 +47,16 @@ def test_le_service_worker_est_servi_et_l_api_n_est_pas_touchee(client):
     assert r.status_code == 200 and "javascript" in r.headers["content-type"]
     assert client.get("/sante").json() == {"etat": "ok"}
     assert client.get("/mobile/inexistant.js").status_code == 404
+
+
+def test_chaque_ecran_appele_par_l_application_est_defini(client):
+    js = client.get(ADRESSE + "app.js").text
+    definis = set(re.findall(r"function (vue\w+)\(", js))
+    appeles = set(re.findall(r"\b(vue[A-Z]\w+)\(", js))
+    assert appeles <= definis, appeles - definis
+
+
+def test_les_references_d_essai_permettent_l_inscription(client, db):
+    from app.references import charger_references
+    assert charger_references(db, "data/references_essai.csv") == 4
+    assert charger_references(db, "data/references_essai.csv") == 0

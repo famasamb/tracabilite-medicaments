@@ -77,6 +77,13 @@ const ICONES = {
   attention: (t) => trait('<path d="M12 4 2.8 19.5h18.4L12 4Z"/><path d="M12 10v4.2M12 17.2h.01"/>', t),
   croix: (t) => trait('<path d="M6 6l12 12M18 6 6 18"/>', t),
   deconnexion: (t) => trait('<path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3"/><path d="M15 8l4 4-4 4M19 12H9"/>', t),
+  produit: (t) => trait('<path d="M4 8.5 12 4l8 4.5v7L12 20l-8-4.5v-7Z"/><path d="m4 8.5 8 4.5 8-4.5M12 13v7"/>', t),
+  grille: (t) => trait('<path d="M4 4v16h16"/><path d="M4 4h16M20 4v16" stroke-dasharray="2.5 2.5"/><path d="M9 9h2.5v2.5H9zM13.5 13.5H16V16h-2.5z"/>', t),
+  employe: (t) => trait('<circle cx="10" cy="8" r="3.4"/><path d="M3.5 20c.7-3.4 3.2-5.2 6.5-5.2M18 12v6M15 15h6"/>', t),
+  batiment: (t) => trait('<path d="M5 20V6l7-3 7 3v14"/><path d="M3 20h18M9 9h.01M9 13h.01M15 9h.01M15 13h.01M10.5 20v-3.5h3V20"/>', t),
+  plus: (t) => trait('<path d="M12 5v14M5 12h14"/>', t),
+  telecharger: (t) => trait('<path d="M12 4v11m0 0-4-4m4 4 4-4"/><path d="M5 19h14"/>', t),
+  loupe: (t) => trait('<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>', t),
   scan: (t) => trait('<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/>', t),
 };
 const icone = (nom, taille = 24) => ICONES[nom](taille);
@@ -104,7 +111,7 @@ function motif() {
 
 /* ------------------------------------------------------------------ État et stockage */
 
-const etat = { jeton: null, profil: null, resultat: null, nettoyage: null };
+const etat = { jeton: null, profil: null, resultat: null, nettoyage: null, produit: null };
 
 function lire(cle) { try { return JSON.parse(localStorage.getItem(cle)); } catch { return null; } }
 function ecrire(cle, valeur) { try { localStorage.setItem(cle, JSON.stringify(valeur)); } catch { /* stockage indisponible */ } }
@@ -133,23 +140,29 @@ class ErreurApi extends Error {
   constructor(statut, detail) { super(detail || `Erreur ${statut}`); this.statut = statut; this.detail = detail || ""; }
 }
 
-async function api(chemin, { methode = "GET", corps, formulaire } = {}) {
+async function requete(chemin, { methode = "GET", corps, formulaire, json } = {}) {
   const entetes = {};
   if (etat.jeton) entetes.Authorization = `Bearer ${etat.jeton}`;
+  if (json !== undefined) entetes["Content-Type"] = "application/json";
   let reponse;
   try {
-    reponse = await fetch(chemin, { method: methode, headers: entetes, body: formulaire || corps });
+    reponse = await fetch(chemin, { method: methode, headers: entetes, body: json !== undefined ? JSON.stringify(json) : formulaire || corps });
   } catch {
     throw new ErreurApi(0, "reseau");
   }
-  let donnees = null;
-  try { donnees = await reponse.json(); } catch { /* corps vide ou non JSON */ }
   if (!reponse.ok) {
+    let donnees = null;
+    try { donnees = await reponse.json(); } catch { /* corps vide ou non JSON */ }
     const d = donnees && donnees.detail;
-    const detail = typeof d === "string" ? d : Array.isArray(d) ? d.map((x) => x.msg).join(" ") : "";
+    const detail = typeof d === "string" ? d : Array.isArray(d) ? "validation" : "";
     throw new ErreurApi(reponse.status, detail);
   }
-  return donnees;
+  return reponse;
+}
+
+async function api(chemin, options) {
+  const reponse = await requete(chemin, options);
+  try { return await reponse.json(); } catch { return null; }
 }
 
 /* ------------------------------------------------------------------ Textes d'erreur (en français soigné) */
@@ -197,13 +210,25 @@ function aller(hash) { if (location.hash === hash) rendre(); else location.hash 
 function rendre() {
   etat.nettoyage?.(); etat.nettoyage = null;
   const hash = location.hash || "#/";
+  if (hash === "#/inscription") { vueInscription(); return; }
   if (!etat.jeton) { vueConnexion(); return; }
   if (hash === "#/connexion") { aller("#/"); return; }
-  if (etat.profil.structure_type === "PNA") { vuePna(); return; }
+  const p = etat.profil, type = p.structure_type;
   const m = hash.match(/^#\/scan\/(\w+)$/);
-  if (m && OPERATIONS[m[1]] && AUTORISEES[etat.profil.structure_type].includes(m[1])) { vueScanner(m[1]); return; }
+  if (m && OPERATIONS[m[1]] && operationsScan().includes(m[1])) { vueScanner(m[1]); return; }
   if (hash === "#/resultat" && etat.resultat) { vueResultat(); return; }
   if (hash === "#/compte") { vueCompte(); return; }
+  if (type === "fabricant") {
+    if (hash === "#/produits") { vueProduits(); return; }
+    if (hash === "#/produits/nouveau") { vueProduitNouveau(); return; }
+    if (hash === "#/lot") { vueLot(); return; }
+  }
+  if (p.role === "responsable") {
+    if (hash === "#/equipe") { vueEquipe(); return; }
+    if (type === "PNA" && hash === "#/sr") { vueSR(); return; }
+    const sr = hash.match(/^#\/sr\/(\w+)$/);
+    if (type === "PNA" && sr) { vueSRResponsable(sr[1]); return; }
+  }
   vueAccueil();
 }
 
@@ -223,7 +248,7 @@ function vueConnexion(erreur = "") {
       <form id="formulaire" novalidate>
         <div id="erreur" role="alert">${erreur ? blocErreur(erreur) : ""}</div>
         <label class="champ"><span>Identifiant de connexion</span>
-          <div class="saisie"><input name="identifiant" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
+          <div class="saisie"><input name="identifiant" autocomplete="username" autocapitalize="none" spellcheck="false" value="${echapper(identifiantInitial)}" required></div>
         </label>
         <label class="champ"><span>Mot de passe</span>
           <div class="saisie"><input name="mdp" type="password" autocomplete="current-password" required>
@@ -231,9 +256,10 @@ function vueConnexion(erreur = "") {
         </label>
         <button class="bouton" type="submit">Se connecter</button>
       </form>
+      <p class="lien-inscription">Votre structure n'a pas encore de compte ?<br><a href="#/inscription">Inscrire ma structure</a></p>
     </main>`;
   const formulaire = document.getElementById("formulaire");
-  formulaire.identifiant.focus({ preventScroll: true });
+  (identifiantInitial ? formulaire.mdp : formulaire.identifiant).focus({ preventScroll: true });
   formulaire.querySelector('[data-action="oeil"]').addEventListener("click", (ev) => {
     const visible = formulaire.mdp.type === "text";
     formulaire.mdp.type = visible ? "password" : "text";
@@ -265,10 +291,13 @@ const blocErreur = (texte) => `<div class="message-erreur">${icone("attention", 
 
 /* ------------------------------------------------------------------ Barre du bas et feuille des opérations */
 
+function operationsScan() { return AUTORISEES[etat.profil.structure_type] || []; }
+
 function barre(actif) {
-  return `<nav class="barre" aria-label="Navigation principale">
+  const scan = operationsScan().length > 0;
+  return `<nav class="barre ${scan ? "" : "sans-scan"}" aria-label="Navigation principale">
     <button class="onglet" data-aller="#/" ${actif === "accueil" ? 'aria-current="page"' : ""}>${icone("accueil")}Accueil</button>
-    <button class="bouton-scan" data-action="choisir" aria-label="Scanner une unité">${icone("scan", 30)}</button>
+    ${scan ? `<button class="bouton-scan" data-action="choisir" aria-label="Scanner une unité">${icone("scan", 30)}</button>` : ""}
     <button class="onglet" data-aller="#/compte" ${actif === "compte" ? 'aria-current="page"' : ""}>${icone("compte")}Compte</button>
   </nav>`;
 }
@@ -279,7 +308,7 @@ function brancherBarre() {
 }
 
 function ouvrirChoix() {
-  const ops = AUTORISEES[etat.profil.structure_type];
+  const ops = operationsScan();
   const feuille = document.createElement("div");
   feuille.innerHTML = `<div class="voile" data-fermer></div>
     <section class="feuille" role="dialog" aria-modal="true" aria-label="Que voulez-vous scanner ?">
@@ -304,9 +333,29 @@ function ligneAction(op, principale) {
 
 /* ------------------------------------------------------------------ Accueil */
 
+function gestion() {
+  const p = etat.profil, liste = [];
+  if (p.structure_type === "fabricant") {
+    liste.push({ vers: "#/produits", icone: "produit", titre: "Produits", resume: "Rechercher ou enregistrer un produit" });
+    liste.push({ vers: "#/lot", icone: "grille", titre: "Sérialiser un lot", resume: "Générer les codes à imprimer" });
+  }
+  if (p.role === "responsable") {
+    liste.push({ vers: "#/equipe", icone: "employe", titre: "Ajouter un employé", resume: "Créer un compte pour votre équipe" });
+    if (p.structure_type === "PNA") liste.push({ vers: "#/sr", icone: "batiment", titre: "Services régionaux", resume: "Créer le compte responsable d'un SR" });
+  }
+  return liste;
+}
+
+function ligneGestion(g) {
+  return `<button class="action" data-aller="${g.vers}">
+    <span class="tuile">${icone(g.icone, 26)}</span>
+    <span class="texte"><strong>${g.titre}</strong><small>${g.resume}</small></span>
+    <span class="fleche">${icone("fleche", 20)}</span></button>`;
+}
+
 function vueAccueil() {
-  const p = etat.profil, ops = AUTORISEES[p.structure_type], principale = PRINCIPALE[p.structure_type];
-  const liste = recents().slice(0, 5);
+  const p = etat.profil, ops = operationsScan(), principale = PRINCIPALE[p.structure_type];
+  const liste = ops.length ? recents().slice(0, 5) : [], outils = gestion();
   racine.innerHTML = `
     <main class="page">
       <header class="entete"><span class="marque">${marque(28)}Traçabilité</span>
@@ -316,12 +365,14 @@ function vueAccueil() {
         <h1>${echapper(p.structure_nom)}</h1>
         <span class="puce">${TYPES_STRUCTURE[p.structure_type] || p.structure_type}</span>
       </section>
-      <h2 class="section-titre">Que voulez-vous faire ?</h2>
-      <div class="actions">${ops.map((o) => ligneAction(o, o === principale)).join("")}</div>
-      <h2 class="section-titre">Récents sur cet appareil</h2>
+      ${ops.length ? `<h2 class="section-titre">Que voulez-vous faire ?</h2>
+      <div class="actions">${ops.map((o) => ligneAction(o, o === principale)).join("")}</div>` : ""}
+      ${outils.length ? `<h2 class="section-titre">Gestion</h2><div class="actions">${outils.map(ligneGestion).join("")}</div>` : ""}
+      ${p.structure_type === "PNA" ? '<p class="encart">Le suivi du circuit public (carte et alertes) se consulte dans la vue SIG.</p>' : ""}
+      ${ops.length ? `<h2 class="section-titre">Récents sur cet appareil</h2>
       ${liste.length ? `<div class="recents">${liste.map(ligneRecent).join("")}</div>`
         : `<div class="recents"><div class="vide"><strong>Aucune opération pour l'instant</strong>Les unités que vous scannez apparaîtront ici.</div></div>`}
-      ${liste.length ? '<p class="mention">Appuyez sur une unité pour revoir son statut. Liste conservée sur cet appareil seulement.</p>' : ""}
+      ${liste.length ? '<p class="mention">Appuyez sur une unité pour revoir son statut. Liste conservée sur cet appareil seulement.</p>' : ""}` : ""}
     </main>${barre("accueil")}`;
   brancherBarre();
   racine.querySelectorAll("[data-op]").forEach((b) => b.addEventListener("click", () => aller(`#/scan/${b.dataset.op}`)));
@@ -368,7 +419,7 @@ function annoncer(texte) {
   setTimeout(() => a.remove(), 5000);
 }
 
-/* ------------------------------------------------------------------ Compte et PNA */
+/* ------------------------------------------------------------------ Compte */
 
 function vueCompte() {
   const p = etat.profil;
@@ -380,14 +431,6 @@ function vueCompte() {
     <div style="margin-top:20px"><button class="bouton discret" data-action="sortir">${icone("deconnexion", 20)}Se déconnecter</button></div>
   </main>${barre("compte")}`;
   brancherBarre();
-  racine.querySelector('[data-action="sortir"]').addEventListener("click", fermerSession);
-}
-
-function vuePna() {
-  racine.innerHTML = `<main class="pna-message page">${marque(40)}
-    <h1 style="margin-top:20px">Cette application est destinée aux structures du circuit</h1>
-    <p>Fabricants, grossistes, services régionaux et officines scannent et vérifient les unités ici. Le suivi de la pharmacie nationale se fait dans la vue SIG.</p>
-    <button class="bouton discret" data-action="sortir">${icone("deconnexion", 20)}Se déconnecter</button></main>`;
   racine.querySelector('[data-action="sortir"]').addEventListener("click", fermerSession);
 }
 
@@ -606,6 +649,455 @@ function vueStatut(r) {
     <button class="bouton discret" data-action="fin">Terminer</button></div></div></main>`;
   racine.querySelector('[data-action="encore"]').addEventListener("click", () => aller("#/scan/statut"));
   racine.querySelector('[data-action="fin"]').addEventListener("click", () => aller("#/"));
+}
+
+/* ------------------------------------------------------------------ Pages de gestion */
+
+// Page secondaire: bouton retour, titre, puis le contenu
+function sousPage(titre, corps, retour = "#/") {
+  racine.innerHTML = `<main class="page">
+    <header class="sous-entete"><button class="retour" data-aller="${retour}" aria-label="Retour">${icone("retour")}</button><h1>${titre}</h1></header>
+    ${corps}</main>${barre("accueil")}`;
+  brancherBarre();
+}
+
+// Champ de formulaire avec message d'erreur propre à ce champ
+function champ(nom, libelle, o = {}) {
+  const { type = "text", aide = "", valeur = "", mdp = false, liste = "", ...attrs } = o;
+  const attributs = Object.entries(attrs).map(([k, v]) => `${k}="${echapper(v)}"`).join(" ");
+  const saisie = type === "textarea"
+    ? `<textarea name="${nom}" rows="3" ${attributs}>${echapper(valeur)}</textarea>`
+    : `<input name="${nom}" type="${type}" value="${echapper(valeur)}" ${liste ? `list="${liste}"` : ""} ${attributs}>`;
+  return `<label class="champ"><span>${libelle}</span>
+    <div class="saisie">${saisie}${mdp ? `<button type="button" class="oeil" data-action="oeil" aria-label="Afficher le mot de passe">${icone("oeil")}</button>` : ""}</div>
+    ${aide ? `<small class="aide-champ">${aide}</small>` : ""}
+    <small class="erreur-champ" data-erreur="${nom}"></small></label>`;
+}
+
+const ALPHABET_MDP = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+function genererMdp() {
+  const octets = crypto.getRandomValues(new Uint8Array(10));
+  return Array.from(octets, (o) => ALPHABET_MDP[o % ALPHABET_MDP.length]).join("");
+}
+const boutonGenerer = '<button type="button" class="lien" data-action="generer">Générer un mot de passe</button>';
+
+function brancherChamps(form) {
+  form.querySelectorAll('[data-action="oeil"]').forEach((b) => b.addEventListener("click", () => {
+    const entree = b.closest(".saisie").querySelector("input");
+    const visible = entree.type === "text";
+    entree.type = visible ? "password" : "text";
+    b.innerHTML = icone(visible ? "oeil" : "oeilBarre");
+    b.setAttribute("aria-label", visible ? "Afficher le mot de passe" : "Masquer le mot de passe");
+  }));
+  form.querySelector('[data-action="generer"]')?.addEventListener("click", () => {
+    form.motDePasse.value = genererMdp(); form.motDePasse.type = "text";
+    const oeil = form.querySelector('[data-action="oeil"]');
+    if (oeil) { oeil.innerHTML = icone("oeilBarre"); oeil.setAttribute("aria-label", "Masquer le mot de passe"); }
+    effacerErreur(form, "motDePasse");
+  });
+  form.addEventListener("input", (ev) => { if (ev.target.name) effacerErreur(form, ev.target.name); });
+}
+
+function effacerErreur(form, nom) {
+  const zone = form.querySelector(`[data-erreur="${nom}"]`);
+  if (zone) zone.textContent = "";
+  form.elements[nom]?.closest?.(".saisie")?.classList.remove("invalide");
+}
+
+// regles: [nom, fonction(valeur) -> message d'erreur ou ""]
+function valider(form, regles) {
+  let premier = null;
+  for (const [nom, test] of regles) {
+    const entree = form.elements[nom];
+    if (!entree) continue;
+    const message = test(entree.value.trim());
+    const zone = form.querySelector(`[data-erreur="${nom}"]`);
+    if (zone) zone.textContent = message;
+    entree.closest(".saisie")?.classList.toggle("invalide", Boolean(message));
+    if (message && !premier) premier = entree;
+  }
+  premier?.focus();
+  return !premier;
+}
+
+const minimum = (n, message) => (v) => (v.length >= n ? "" : message);
+const requis = (message) => (v) => (v ? "" : message);
+
+const regleNom = minimum(2, "Saisissez au moins 2 caractères.");
+const regleFonction = minimum(2, "Saisissez au moins 2 caractères.");
+const regleIdentifiant = minimum(3, "L'identifiant compte au moins 3 caractères.");
+const regleMdp = minimum(8, "Le mot de passe compte au moins 8 caractères.");
+
+function texteGestion(e) {
+  const d = e.detail || "";
+  if (e.statut === 0) return "Le serveur est injoignable. Vérifiez votre connexion et réessayez.";
+  if (/ne s'inscrit pas/i.test(d)) return "Un service régional ne s'inscrit pas lui-même : son compte responsable est créé par la Pharmacie nationale.";
+  if (/aucune correspondance/i.test(d)) return "Cette référence d'autorisation est introuvable. Vérifiez-la, ou contactez l'ARP.";
+  if (/structure est deja inscrite/i.test(d)) return "Une structure est déjà inscrite avec cette référence.";
+  if (/identifiant de connexion est deja utilise|identifiant deja utilise/i.test(d)) return "Cet identifiant de connexion est déjà utilisé. Choisissez-en un autre.";
+  if (/inscription impossible|compte impossible/i.test(d)) return "Cette référence ou cet identifiant est déjà utilisé.";
+  if (/gtin invalide/i.test(d)) return "GTIN invalide : 14 chiffres avec une clé de contrôle correcte.";
+  if (/gtin/i.test(d)) return "Un produit est déjà enregistré avec ce GTIN.";
+  if (/deja serialise/i.test(d)) return "Ce lot est déjà sérialisé pour ce produit.";
+  if (/produit introuvable/i.test(d)) return "Produit introuvable. Enregistrez-le d'abord.";
+  if (/n'appartient pas/i.test(d)) return "Ce produit n'appartient pas à votre structure.";
+  if (/peremption/i.test(d)) return "La date de péremption doit être dans le futur.";
+  if (/sr introuvable/i.test(d)) return "Ce service régional est introuvable parmi ceux de votre pharmacie nationale.";
+  if (/sr dispose deja/i.test(d)) return "Ce service régional dispose déjà d'un compte responsable.";
+  if (e.statut === 403) return "Votre compte n'est pas autorisé à effectuer cette action.";
+  if (d === "validation" || e.statut === 422) return "Vérifiez les champs saisis.";
+  return "L'opération n'a pas abouti. Réessayez.";
+}
+
+// Envoie le formulaire: bouton occupé, erreur du serveur affichée en haut du formulaire
+async function soumettre(form, libelleOccupe, action) {
+  const zone = form.querySelector("[data-zone-erreur]"), bouton = form.querySelector('button[type="submit"]');
+  const texte = bouton.innerHTML;
+  bouton.disabled = true; bouton.textContent = libelleOccupe; zone.innerHTML = "";
+  try {
+    await action();
+  } catch (e) {
+    if (e.statut === 401) { fermerSession(); return; }
+    zone.innerHTML = blocErreur(texteGestion(e));
+    zone.scrollIntoView({ block: "center", behavior: "smooth" });
+    bouton.disabled = false; bouton.innerHTML = texte;
+  }
+}
+const zoneErreur = '<div data-zone-erreur role="alert"></div>';
+
+// Écran de confirmation, dans le même style que le résultat d'un scan
+function afficherSucces({ titre, sous, lignes = [], extra = "", boutons = [] }) {
+  racine.innerHTML = `<main class="resultat ok">
+    <div class="haut"><div class="sceau" aria-hidden="true">${icone("coche", 46)}</div>
+      <h1 role="status">${titre}</h1><p class="sous-titre">${sous}</p></div>
+    <div class="corps">${lignes.length ? `<dl class="fiche">${lignes.map(([l, v, c]) => ligne(l, v, c || "")).join("")}</dl>` : ""}
+    ${extra}
+    <div class="bas">${boutons.map((b, i) => `<${b.href ? `a href="${b.href}" download="${echapper(b.telecharger)}"` : "button"} class="bouton ${b.discret ? "discret" : ""}" data-i="${i}">${b.icone ? icone(b.icone, 22) : ""}${b.texte}</${b.href ? "a" : "button"}>`).join("")}</div></div></main>`;
+  boutons.forEach((b, i) => { if (b.clic) racine.querySelector(`[data-i="${i}"]`).addEventListener("click", b.clic); });
+}
+
+/* ---------- Inscription d'une structure (fiche 1) ---------- */
+
+const TYPES_INSCRIPTION = [
+  ["fabricant", "Fabricant", "Laboratoire qui sérialise ses produits"],
+  ["grossisteRepartiteur", "Grossiste répartiteur", "Reçoit et expédie les lots"],
+  ["officine", "Officine", "Reçoit et dispense les unités"],
+  ["PNA", "Pharmacie nationale", "Suit le circuit et crée les comptes des services régionaux"],
+];
+let identifiantInitial = "";
+
+function vueInscription(etape = 1, saisi = {}) {
+  const progression = `<div class="progression" role="img" aria-label="Étape ${etape} sur 2"><i class="${etape >= 1 ? "fait" : ""}"></i><i class="${etape >= 2 ? "fait" : ""}"></i></div>`;
+  if (etape === 1) {
+    racine.innerHTML = `<main class="page page-simple">
+      <header class="sous-entete"><button class="retour" data-aller="#/connexion" aria-label="Retour à la connexion">${icone("retour")}</button><h1>Inscrire ma structure</h1></header>
+      ${progression}<p class="etape-titre">Étape 1 sur 2 · Votre structure</p>
+      <form id="formulaire" novalidate>
+        <div class="champ"><span id="lib-type" class="libelle-groupe">Type de structure</span>
+          <div class="choix-types" role="radiogroup" aria-labelledby="lib-type">
+            ${TYPES_INSCRIPTION.map(([v, t, d]) => `<button type="button" class="choix-type" role="radio" aria-checked="${saisi.type === v}" data-type="${v}">
+              <span class="coche-radio"></span><span class="texte"><strong>${t}</strong><small>${d}</small></span></button>`).join("")}
+          </div>
+          <small class="aide-champ">Un service régional ne s'inscrit pas : son compte est créé par la Pharmacie nationale.</small>
+          <small class="erreur-champ" data-erreur="type"></small></div>
+        ${champ("nom", "Nom de la structure", { valeur: saisi.nom || "", autocomplete: "organization", maxlength: 200 })}
+        ${champ("localisation", "Localisation", { valeur: saisi.localisation || "", aide: "Ville ou adresse de la structure", maxlength: 200 })}
+        ${champ("referenceAutorisation", "Référence d'autorisation", { valeur: saisi.referenceAutorisation || "", aide: "Telle qu'elle figure sur l'autorisation de votre structure", autocapitalize: "characters", spellcheck: "false", maxlength: 100 })}
+        <button class="bouton" type="submit">Continuer</button>
+      </form></main>`;
+    brancherBarre();
+    const form = document.getElementById("formulaire");
+    let type = saisi.type || "";
+    form.querySelectorAll(".choix-type").forEach((b) => b.addEventListener("click", () => {
+      type = b.dataset.type;
+      form.querySelectorAll(".choix-type").forEach((x) => x.setAttribute("aria-checked", String(x === b)));
+      form.querySelector('[data-erreur="type"]').textContent = "";
+    }));
+    brancherChamps(form);
+    form.addEventListener("submit", (ev) => {
+      ev.preventDefault();
+      const ok = valider(form, [
+        ["nom", minimum(2, "Saisissez le nom de la structure.")],
+        ["localisation", minimum(2, "Saisissez la localisation.")],
+        ["referenceAutorisation", requis("Saisissez la référence d'autorisation.")],
+      ]);
+      if (!type) { form.querySelector('[data-erreur="type"]').textContent = "Choisissez le type de votre structure."; form.querySelector(".choix-type").focus(); return; }
+      if (!ok) return;
+      vueInscription(2, { ...saisi, type, nom: form.nom.value.trim(), localisation: form.localisation.value.trim(), referenceAutorisation: form.referenceAutorisation.value.trim() });
+    });
+    return;
+  }
+  racine.innerHTML = `<main class="page page-simple">
+    <header class="sous-entete"><button class="retour" data-action="precedent" aria-label="Étape précédente">${icone("retour")}</button><h1>Inscrire ma structure</h1></header>
+    ${progression}<p class="etape-titre">Étape 2 sur 2 · Le responsable du compte</p>
+    <div class="recap">${icone("batiment", 22)}<span><strong>${echapper(saisi.nom)}</strong>${TYPES_STRUCTURE[saisi.type]} · ${echapper(saisi.localisation)}</span></div>
+    <form id="formulaire" novalidate>
+      ${zoneErreur}
+      ${champ("responsableNom", "Nom et prénom", { valeur: saisi.responsableNom || "", autocomplete: "name", maxlength: 200 })}
+      ${champ("fonction", "Fonction", { valeur: saisi.fonction || "", aide: "Par exemple : pharmacien responsable", maxlength: 100 })}
+      ${champ("identifiantConnexion", "Identifiant de connexion", { valeur: saisi.identifiantConnexion || "", autocomplete: "username", autocapitalize: "none", spellcheck: "false", maxlength: 100 })}
+      ${champ("motDePasse", "Mot de passe", { type: "password", mdp: true, autocomplete: "new-password", aide: "8 caractères au moins", maxlength: 128 })}
+      <button class="bouton" type="submit">Créer le compte</button>
+    </form></main>`;
+  const form = document.getElementById("formulaire");
+  racine.querySelector('[data-action="precedent"]').addEventListener("click", () => vueInscription(1, { ...saisi, responsableNom: form.responsableNom.value.trim(), fonction: form.fonction.value.trim(), identifiantConnexion: form.identifiantConnexion.value.trim() }));
+  brancherChamps(form);
+  form.addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    if (!valider(form, [["responsableNom", regleNom], ["fonction", regleFonction], ["identifiantConnexion", regleIdentifiant], ["motDePasse", (v) => (form.motDePasse.value.length >= 8 ? "" : "Le mot de passe compte au moins 8 caractères.")]])) return;
+    const actuel = { ...saisi, responsableNom: form.responsableNom.value.trim(), fonction: form.fonction.value.trim(), identifiantConnexion: form.identifiantConnexion.value.trim() };
+    soumettre(form, "Création du compte…", async () => {
+      await api("/structures/inscription", { methode: "POST", json: {
+        structure: { nom: saisi.nom, type: saisi.type, localisation: saisi.localisation, referenceAutorisation: saisi.referenceAutorisation },
+        responsable: { nom: actuel.responsableNom, fonction: actuel.fonction, identifiantConnexion: actuel.identifiantConnexion, motDePasse: form.motDePasse.value },
+      } });
+      identifiantInitial = actuel.identifiantConnexion;
+      afficherSucces({
+        titre: "Compte créé",
+        sous: saisi.type === "PNA"
+          ? "Vous pouvez maintenant créer les comptes responsables des services régionaux."
+          : "Votre structure est inscrite. Connectez-vous pour commencer.",
+        lignes: [["Structure", echapper(saisi.nom)], ["Type", TYPES_STRUCTURE[saisi.type]], ["Identifiant", echapper(actuel.identifiantConnexion), "serie"]],
+        boutons: [{ texte: "Se connecter", clic: () => aller("#/connexion") }],
+      });
+    });
+  });
+}
+
+/* ---------- Compte d'un employé (fiche 2) ---------- */
+
+function vueEquipe() {
+  sousPage("Ajouter un employé", `
+    <p class="intro">L'employé se connectera avec l'identifiant et le mot de passe initial que vous lui donnez.</p>
+    <form id="formulaire" novalidate>${zoneErreur}
+      ${champ("nom", "Nom et prénom", { maxlength: 200 })}
+      ${champ("fonction", "Fonction", { aide: "Par exemple : préparateur en pharmacie", maxlength: 100 })}
+      ${champ("identifiantConnexion", "Identifiant de connexion", { autocapitalize: "none", spellcheck: "false", autocomplete: "off", maxlength: 100 })}
+      ${champ("motDePasse", "Mot de passe initial", { type: "password", mdp: true, autocomplete: "new-password", aide: "8 caractères au moins", maxlength: 128 })}
+      ${boutonGenerer}
+      <button class="bouton" type="submit">Créer le compte</button>
+    </form>`);
+  const form = document.getElementById("formulaire");
+  brancherChamps(form);
+  form.addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    if (!valider(form, [["nom", regleNom], ["fonction", regleFonction], ["identifiantConnexion", regleIdentifiant], ["motDePasse", () => (form.motDePasse.value.length >= 8 ? "" : "Le mot de passe compte au moins 8 caractères.")]])) return;
+    soumettre(form, "Création du compte…", async () => {
+      const mdp = form.motDePasse.value;
+      const e = await api("/employes", { methode: "POST", json: { nom: form.nom.value.trim(), fonction: form.fonction.value.trim(), identifiantConnexion: form.identifiantConnexion.value.trim(), motDePasse: mdp } });
+      afficherSucces({
+        titre: "Compte employé créé",
+        sous: "Transmettez-lui son identifiant et son mot de passe initial.",
+        lignes: [["Employé", echapper(e.nom)], ["Fonction", echapper(e.fonction)], ["Identifiant", echapper(e.identifiantConnexion), "serie"], ["Mot de passe initial", echapper(mdp), "serie"]],
+        boutons: [{ texte: "Ajouter un autre employé", icone: "plus", clic: () => aller("#/equipe") }, { texte: "Terminer", discret: true, clic: () => aller("#/") }],
+      });
+    });
+  });
+}
+
+/* ---------- Produits (fiche 3) ---------- */
+
+function vueProduits() {
+  sousPage("Produits", `
+    <button class="bouton" data-aller="#/produits/nouveau">${icone("plus", 22)}Nouveau produit</button>
+    <label class="champ recherche"><span class="visuel-seulement">Rechercher un produit</span>
+      <div class="saisie">${icone("loupe", 20)}<input id="recherche" type="search" placeholder="Nom du produit ou GTIN" autocomplete="off" spellcheck="false" maxlength="100"></div></label>
+    <div id="resultats" aria-live="polite"></div>`);
+  const zone = document.getElementById("resultats"), entree = document.getElementById("recherche");
+  const invite = '<div class="vide"><strong>Retrouvez un de vos produits</strong>Saisissez au moins 2 lettres de son nom, ou son GTIN, puis appuyez dessus pour sérialiser un lot.</div>';
+  zone.innerHTML = invite;
+  let minuteur = null, numero = 0;
+  entree.addEventListener("input", () => {
+    clearTimeout(minuteur);
+    const q = entree.value.trim();
+    if (q.length < 2) { numero++; zone.innerHTML = invite; return; }
+    minuteur = setTimeout(async () => {
+      const mien = ++numero;
+      zone.innerHTML = '<div class="vide">Recherche…</div>';
+      try {
+        const liste = await api(`/produits?q=${encodeURIComponent(q)}`);
+        if (mien !== numero) return;
+        if (!liste.length) { zone.innerHTML = '<div class="vide"><strong>Aucun produit trouvé</strong>Vérifiez l\'orthographe, ou enregistrez un nouveau produit.</div>'; return; }
+        zone.innerHTML = `<div class="liste-produits">${liste.map((p) => `<button class="recent produit" data-id="${echapper(p.id)}">
+          <span class="pastille ok">${icone("produit", 20)}</span>
+          <span class="texte"><strong>${echapper(p.nom)}</strong><small>${echapper(p.formePharmaceutique)} · ${echapper(p.conditionnement)}</small><small>${p.gtin ? `GTIN ${echapper(p.gtin)}` : "Sans GTIN"}</small></span>
+          <span class="fleche">${icone("fleche", 18)}</span></button>`).join("")}</div>`;
+        zone.querySelectorAll("[data-id]").forEach((b) => b.addEventListener("click", () => {
+          etat.produit = liste.find((p) => p.id === b.dataset.id); aller("#/lot");
+        }));
+      } catch (e) {
+        if (mien !== numero) return;
+        if (e.statut === 401) { fermerSession(); return; }
+        zone.innerHTML = blocErreur(texteGestion(e));
+      }
+    }, 300);
+  });
+}
+
+const FORMES = ["Comprimé", "Gélule", "Sirop", "Solution injectable", "Suspension buvable", "Crème", "Pommade", "Collyre", "Suppositoire", "Poudre pour solution buvable"];
+
+function gtinValide(g) {
+  if (!/^\d{14}$/.test(g)) return false;
+  const somme = [...g.slice(0, 13)].reverse().reduce((s, c, i) => s + Number(c) * (i % 2 === 0 ? 3 : 1), 0);
+  return (10 - (somme % 10)) % 10 === Number(g[13]);
+}
+
+function vueProduitNouveau() {
+  sousPage("Nouveau produit", `
+    <form id="formulaire" novalidate>${zoneErreur}
+      ${champ("nom", "Nom du produit", { maxlength: 200 })}
+      ${champ("formePharmaceutique", "Forme pharmaceutique", { liste: "formes", autocomplete: "off", maxlength: 100 })}
+      <datalist id="formes">${FORMES.map((f) => `<option value="${f}">`).join("")}</datalist>
+      ${champ("composition", "Composition", { type: "textarea", maxlength: 500, aide: "Principe actif et dosage" })}
+      ${champ("conditionnement", "Conditionnement", { maxlength: 200, aide: "Par exemple : boîte de 20 comprimés" })}
+      ${champ("gtin", "GTIN (facultatif)", { inputmode: "numeric", maxlength: 14, autocomplete: "off", aide: "14 chiffres. Sans GTIN, le produit est identifié par un code interne." })}
+      <button class="bouton" type="submit">Enregistrer le produit</button>
+    </form>`, "#/produits");
+  const form = document.getElementById("formulaire");
+  brancherChamps(form);
+  form.addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    if (!valider(form, [
+      ["nom", regleNom], ["formePharmaceutique", minimum(2, "Saisissez la forme pharmaceutique.")],
+      ["composition", minimum(2, "Saisissez la composition.")], ["conditionnement", minimum(2, "Saisissez le conditionnement.")],
+      ["gtin", (v) => (!v || gtinValide(v) ? "" : "GTIN invalide : 14 chiffres avec une clé de contrôle correcte.")],
+    ])) return;
+    soumettre(form, "Enregistrement…", async () => {
+      const v = (n) => form[n].value.trim();
+      const p = await api("/produits", { methode: "POST", json: { nom: v("nom"), formePharmaceutique: v("formePharmaceutique"), composition: v("composition"), conditionnement: v("conditionnement"), gtin: v("gtin") || null } });
+      afficherSucces({
+        titre: "Produit enregistré",
+        sous: "Vous pouvez maintenant sérialiser un lot de ce produit.",
+        lignes: [["Produit", echapper(p.nom)], ["Forme", echapper(p.formePharmaceutique)], ["Conditionnement", echapper(p.conditionnement)], ["GTIN", p.gtin ? echapper(p.gtin) : "Code interne", "serie"]],
+        boutons: [
+          { texte: "Sérialiser un lot", icone: "grille", clic: () => { etat.produit = p; aller("#/lot"); } },
+          { texte: "Terminer", discret: true, clic: () => aller("#/") },
+        ],
+      });
+    });
+  });
+}
+
+/* ---------- Sérialisation d'un lot (fiche 4) ---------- */
+
+// Lit le premier code image de l'archive ZIP, pour montrer un code à scanner
+async function premierCode(blob) {
+  try {
+    const entete = new DataView(await blob.slice(0, 30).arrayBuffer());
+    if (entete.getUint32(0, true) !== 0x04034b50) return null;
+    const methode = entete.getUint16(8, true), taille = entete.getUint32(18, true);
+    const longNom = entete.getUint16(26, true), longExtra = entete.getUint16(28, true);
+    if (!taille || (entete.getUint16(6, true) & 8)) return null;
+    const debut = 30 + longNom + longExtra;
+    const nom = await blob.slice(30, 30 + longNom).text();
+    let donnees = blob.slice(debut, debut + taille);
+    if (methode === 8) donnees = await new Response(donnees.stream().pipeThrough(new DecompressionStream("deflate-raw"))).blob();
+    else if (methode !== 0) return null;
+    return { serie: nom.replace(/\.png$/i, ""), url: URL.createObjectURL(new Blob([donnees], { type: "image/png" })) };
+  } catch { return null; }
+}
+
+function vueLot() {
+  const p = etat.produit;
+  if (!p) { aller("#/produits"); return; }
+  const demain = new Date(Date.now() + 86400000), min = `${demain.getFullYear()}-${String(demain.getMonth() + 1).padStart(2, "0")}-${String(demain.getDate()).padStart(2, "0")}`;
+  sousPage("Sérialiser un lot", `
+    <div class="recap">${icone("produit", 22)}<span><strong>${echapper(p.nom)}</strong>${echapper(p.formePharmaceutique)} · ${echapper(p.conditionnement)}</span>
+      <button class="lien" data-aller="#/produits">Changer</button></div>
+    <form id="formulaire" novalidate>${zoneErreur}
+      ${champ("numeroLot", "Numéro de lot", { maxlength: 20, autocapitalize: "characters", autocomplete: "off", spellcheck: "false", aide: "20 caractères au maximum, sans parenthèses" })}
+      ${champ("datePeremption", "Date de péremption", { type: "date", min })}
+      ${champ("quantite", "Nombre d'unités", { type: "number", inputmode: "numeric", min: "1", max: "10000", step: "1", aide: "De 1 à 10 000 unités par lot" })}
+      <button class="bouton" type="submit">${icone("grille", 22)}Générer les codes</button>
+    </form>`, "#/produits");
+  const form = document.getElementById("formulaire");
+  brancherChamps(form);
+  form.addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    if (!valider(form, [
+      ["numeroLot", (v) => (!v ? "Saisissez le numéro de lot." : v.length > 20 ? "20 caractères au maximum." : /[()]/.test(v) ? "Les parenthèses ne sont pas admises." : "")],
+      ["datePeremption", (v) => (!v ? "Choisissez la date de péremption." : v < min ? "La date doit être dans le futur." : "")],
+      ["quantite", (v) => (/^\d+$/.test(v) && Number(v) >= 1 && Number(v) <= 10000 ? "" : "Saisissez un nombre entre 1 et 10 000.")],
+    ])) return;
+    const chargement = document.createElement("div");
+    chargement.className = "chargement"; chargement.setAttribute("role", "status");
+    chargement.innerHTML = '<div><div class="anneau"></div><strong>Génération des codes…</strong></div>';
+    soumettre(form, "Génération…", async () => {
+      document.body.appendChild(chargement);
+      try {
+        const lot = form.numeroLot.value.trim(), peremption = form.datePeremption.value, quantite = Number(form.quantite.value);
+        const reponse = await requete("/lots/serialisation", { methode: "POST", json: { produit_id: p.id, numeroLot: lot, datePeremption: peremption, quantite } });
+        const archive = await reponse.blob();
+        const code = await premierCode(archive);
+        const lien = URL.createObjectURL(archive);
+        afficherSucces({
+          titre: "Lot sérialisé",
+          sous: `${quantite} ${quantite > 1 ? "codes ont été générés" : "code a été généré"}. Téléchargez l'archive pour les imprimer.`,
+          lignes: [["Produit", echapper(p.nom)], ["Lot", echapper(lot), "serie"], ["Péremption", new Date(`${peremption}T12:00:00`).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })], ["Unités", String(quantite)]],
+          extra: code ? `<figure class="apercu-code"><img src="${code.url}" alt="Premier code DataMatrix du lot"><figcaption>Premier code du lot<br><span class="serie">${echapper(code.serie)}</span></figcaption></figure>` : "",
+          boutons: [
+            { texte: "Télécharger les codes (ZIP)", icone: "telecharger", href: lien, telecharger: `codes_${lot}.zip` },
+            { texte: "Sérialiser un autre lot", discret: true, clic: () => aller("#/lot") },
+            { texte: "Terminer", discret: true, clic: () => aller("#/") },
+          ],
+        });
+      } finally { chargement.remove(); }
+    });
+  });
+}
+
+/* ---------- Services régionaux (fiche 4 de la PNA) ---------- */
+
+async function vueSR() {
+  sousPage("Services régionaux", '<p class="intro">Créez le compte du responsable de chaque service régional.</p><div id="liste" aria-live="polite"><div class="vide">Chargement…</div></div>');
+  const zone = document.getElementById("liste");
+  try {
+    const liste = await api("/sr");
+    if (!liste.length) { zone.innerHTML = '<div class="vide"><strong>Aucun service régional</strong>Aucun service régional n\'est rattaché à votre pharmacie nationale.</div>'; return; }
+    zone.innerHTML = `<div class="liste-produits">${liste.map((s) => {
+      const interieur = `<span class="pastille ${s.aUnResponsable ? "ok" : "alerte"}">${icone(s.aUnResponsable ? "coche" : "employe", 20)}</span>
+        <span class="texte"><strong>${echapper(s.nom)}</strong><small>${echapper(s.localisation)}</small></span>
+        <span class="droite"><strong class="${s.aUnResponsable ? "ok" : "alerte"}">${s.aUnResponsable ? "Compte créé" : "Sans responsable"}</strong></span>`;
+      return s.aUnResponsable ? `<div class="recent">${interieur}</div>`
+        : `<button class="recent" data-sr="${echapper(s.id)}">${interieur}<span class="fleche">${icone("fleche", 18)}</span></button>`;
+    }).join("")}</div>`;
+    zone.querySelectorAll("[data-sr]").forEach((b) => b.addEventListener("click", () => aller(`#/sr/${b.dataset.sr}`)));
+  } catch (e) {
+    if (e.statut === 401) { fermerSession(); return; }
+    zone.innerHTML = blocErreur(texteGestion(e));
+  }
+}
+
+async function vueSRResponsable(id) {
+  let sr = null;
+  try { sr = (await api("/sr")).find((s) => s.id === id); } catch (e) { if (e.statut === 401) { fermerSession(); return; } }
+  if (!sr || sr.aUnResponsable) { aller("#/sr"); return; }
+  sousPage("Responsable du SR", `
+    <div class="recap">${icone("batiment", 22)}<span><strong>${echapper(sr.nom)}</strong>${echapper(sr.localisation)}</span></div>
+    <form id="formulaire" novalidate>${zoneErreur}
+      ${champ("nom", "Nom et prénom", { maxlength: 200 })}
+      ${champ("fonction", "Fonction", { valeur: "Pharmacien chef", maxlength: 100 })}
+      ${champ("identifiantConnexion", "Identifiant de connexion", { autocapitalize: "none", spellcheck: "false", autocomplete: "off", maxlength: 100 })}
+      ${champ("motDePasse", "Mot de passe initial", { type: "password", mdp: true, autocomplete: "new-password", aide: "8 caractères au moins", maxlength: 128 })}
+      ${boutonGenerer}
+      <button class="bouton" type="submit">Créer le compte</button>
+    </form>`, "#/sr");
+  const form = document.getElementById("formulaire");
+  brancherChamps(form);
+  form.addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    if (!valider(form, [["nom", regleNom], ["fonction", regleFonction], ["identifiantConnexion", regleIdentifiant], ["motDePasse", () => (form.motDePasse.value.length >= 8 ? "" : "Le mot de passe compte au moins 8 caractères.")]])) return;
+    soumettre(form, "Création du compte…", async () => {
+      const mdp = form.motDePasse.value;
+      const e = await api(`/sr/${id}/responsable`, { methode: "POST", json: { nom: form.nom.value.trim(), fonction: form.fonction.value.trim(), identifiantConnexion: form.identifiantConnexion.value.trim(), motDePasse: mdp } });
+      afficherSucces({
+        titre: "Compte responsable créé",
+        sous: "Transmettez-lui son identifiant et son mot de passe initial.",
+        lignes: [["Service régional", echapper(sr.nom)], ["Responsable", echapper(e.nom)], ["Identifiant", echapper(e.identifiantConnexion), "serie"], ["Mot de passe initial", echapper(mdp), "serie"]],
+        boutons: [{ texte: "Autres services régionaux", icone: "batiment", clic: () => aller("#/sr") }, { texte: "Terminer", discret: true, clic: () => aller("#/") }],
+      });
+    });
+  });
 }
 
 /* ------------------------------------------------------------------ Démarrage */

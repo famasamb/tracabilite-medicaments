@@ -1,0 +1,5 @@
+reference,nom,type
+ESSAI-FAB-001,Laboratoire d'essai,fabricant
+ESSAI-GRO-001,Grossiste d'essai,grossisteRepartiteur
+ESSAI-OFF-001,Officine d'essai,officine
+ESSAI-PNA-001,Pharmacie nationale d'essai,PNA

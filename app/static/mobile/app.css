@@ -377,3 +377,79 @@ button.recent:active { background: var(--menthe); }
   box-shadow: 0 10px 30px rgba(0, 0, 0, .3);
   animation: montee .22s ease-out;
 }
+
+/* ---------- Pages de gestion ---------- */
+.sous-entete { display: flex; align-items: center; gap: 12px; }
+.sous-entete h1 { font-size: 24px; font-weight: 700; line-height: 1.1; }
+.retour {
+  flex: none; width: 44px; height: 44px; border-radius: 50%;
+  border: 1.5px solid var(--trait); background: var(--surface); color: var(--encre);
+  display: grid; place-items: center;
+}
+.retour:active { background: var(--menthe); }
+.page > .sous-entete + * { margin-top: 20px; }
+.page-simple { padding-bottom: calc(env(safe-area-inset-bottom) + 36px); }
+.intro { margin: 0 0 22px; color: var(--encre-douce); }
+.page .bouton + .champ, .page .bouton + .recherche { margin-top: 18px; }
+
+a.bouton { text-decoration: none; }
+.bouton svg { flex: none; }
+
+.champ .saisie textarea {
+  flex: 1; min-width: 0; border: 0; background: transparent; outline: 0; resize: vertical;
+  padding: 14px 16px; font-size: 17px; font-family: inherit; line-height: 1.4;
+}
+.champ .saisie.invalide { border-color: var(--vermillon); box-shadow: 0 0 0 4px rgba(164, 47, 25, .1); }
+.champ .saisie > svg { margin-left: 16px; flex: none; color: var(--encre-douce); }
+.champ .saisie > svg + input { padding-left: 10px; }
+.aide-champ { display: block; margin-top: 6px; color: var(--encre-douce); font-size: 13.5px; }
+.erreur-champ { display: block; color: var(--vermillon); font-size: 13.5px; font-weight: 600; }
+.erreur-champ:not(:empty) { margin-top: 6px; }
+.libelle-groupe { display: block; font-weight: 600; font-size: 14px; margin-bottom: 8px; }
+[data-zone-erreur]:not(:empty) { margin-bottom: 18px; }
+
+.lien { border: 0; background: transparent; color: var(--pin); font-weight: 650; padding: 6px 0; margin: -6px 0 18px; text-decoration: underline; text-underline-offset: 3px; }
+.recap .lien { margin: 0; flex: none; }
+.lien-inscription { margin: 26px 0 0; text-align: center; color: var(--encre-douce); }
+.lien-inscription a { color: var(--pin); font-weight: 650; }
+
+.progression { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 22px; }
+.progression i { height: 5px; border-radius: 5px; background: var(--trait); }
+.progression i.fait { background: var(--pin); }
+.etape-titre { margin: 12px 0 22px; color: var(--encre-douce); font-weight: 600; }
+
+.choix-types { display: grid; gap: 10px; }
+.choix-type {
+  display: flex; align-items: center; gap: 14px; text-align: left; width: 100%;
+  padding: 14px 16px; border-radius: var(--rayon); background: var(--surface); border: 1.5px solid var(--trait);
+}
+.choix-type .texte { flex: 1; min-width: 0; }
+.choix-type strong { display: block; font-family: var(--police-titre); font-weight: 650; font-size: 17px; }
+.choix-type small { display: block; color: var(--encre-douce); font-size: 13.5px; }
+.coche-radio { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 2px solid #aab7b0; display: grid; place-items: center; }
+.choix-type[aria-checked="true"] { border-color: var(--pin); background: #eef8f3; box-shadow: 0 0 0 3px rgba(11, 93, 75, .12); }
+.choix-type[aria-checked="true"] .coche-radio { border-color: var(--pin); }
+.choix-type[aria-checked="true"] .coche-radio::after { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--pin); }
+
+.recap {
+  display: flex; align-items: center; gap: 12px; margin: 0 0 22px; padding: 14px 16px;
+  background: var(--menthe); border-radius: var(--rayon); color: var(--pin-profond);
+}
+.recap svg { flex: none; }
+.recap > span { flex: 1; min-width: 0; font-size: 14px; }
+.recap strong { display: block; font-size: 16px; overflow-wrap: anywhere; }
+
+.encart { margin: 24px 0 0; padding: 14px 16px; border-radius: var(--rayon); background: var(--surface); border: 1.5px dashed var(--trait); color: var(--encre-douce); }
+.liste-produits { margin-top: 14px; background: var(--surface); border: 1.5px solid var(--trait); border-radius: var(--rayon-grand); overflow: hidden; }
+.liste-produits .recent + .recent { border-top: 1px solid var(--trait); }
+.recherche { margin-bottom: 0; }
+#resultats .vide { margin-top: 14px; }
+.recent.produit .texte small + small { margin-top: 1px; }
+.recent .droite .alerte { color: var(--ambre); }
+
+.barre.sans-scan { grid-template-columns: 1fr 1fr; }
+
+.apercu-code { margin: 18px 0 0; padding: 18px; text-align: center; background: var(--surface); border: 1.5px solid var(--trait); border-radius: var(--rayon-grand); }
+.apercu-code img { width: 160px; height: 160px; image-rendering: pixelated; background: #fff; border: 1px solid var(--trait); padding: 8px; }
+.apercu-code figcaption { margin-top: 10px; color: var(--encre-douce); font-size: 14px; }
+.apercu-code .serie { color: var(--encre); font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
