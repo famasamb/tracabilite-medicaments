@@ -2,7 +2,7 @@
 from app.models import Structure, TypeStructure
 from tests.test_evenements import connecte, inscrire_structure, serialiser, session
 
-CHEF = {"nom": "Awa Ndiaye", "fonction": "Pharmacien chef", "identifiantConnexion": "chef.dakar",
+CHEF = {"nom": "Awa Ndiaye", "fonction": "Pharmacien chef", "identifiantConnexion": "chef.dakar", "email": "chef.dakar" + "@essai.sn",
         "motDePasse": "MotDePasseChef1"}
 
 
@@ -49,7 +49,7 @@ def test_le_chef_de_sr_se_connecte_avec_les_droits_de_responsable(client):
     assert profil["role"] == "responsable" and profil["structure_type"] == "SR"
     # il peut creer des comptes pour son personnel (fiche 3)
     r = client.post("/employes", headers=chef, json={"nom": "Moussa Fall", "fonction": "Preparateur",
-                    "identifiantConnexion": "moussa.sr", "motDePasse": "MotDePasseEmploye1"})
+                    "identifiantConnexion": "moussa.sr", "email": "moussa.sr" + "@essai.sn", "motDePasse": "MotDePasseEmploye1"})
     assert r.status_code == 201
 
 
@@ -100,7 +100,7 @@ def test_seule_la_pna_gere_les_sr(client):
 def test_un_employe_de_la_pna_ne_gere_pas_les_sr(client):
     pna = pna_connectee(client)
     client.post("/employes", headers=pna, json={"nom": "Moussa Fall", "fonction": "Agent",
-                "identifiantConnexion": "agent.pna", "motDePasse": "MotDePasseEmploye1"})
+                "identifiantConnexion": "agent.pna", "email": "agent.pna" + "@essai.sn", "motDePasse": "MotDePasseEmploye1"})
     agent = connecte(client, "agent.pna", "MotDePasseEmploye1")
     assert client.get("/sr", headers=agent).status_code == 403
 

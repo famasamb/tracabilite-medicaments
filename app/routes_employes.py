@@ -19,9 +19,11 @@ def creer_compte_employe(donnees: EmployeEntree,
     """Le responsable cree un compte employe, rattache a sa propre structure."""
     if db.query(Utilisateur).filter_by(identifiantConnexion=donnees.identifiantConnexion).first():
         raise HTTPException(409, "Cet identifiant de connexion est deja utilise.")
+    if db.query(Utilisateur).filter_by(email=donnees.email).first():
+        raise HTTPException(409, "Cette adresse e-mail est deja utilisee.")
 
     employe = Utilisateur(nom=donnees.nom, fonction=donnees.fonction,
-                          identifiantConnexion=donnees.identifiantConnexion,
+                          identifiantConnexion=donnees.identifiantConnexion, email=donnees.email,
                           motDePasse=hacher_mot_de_passe(donnees.motDePasse),
                           role=Role.employe, structure_id=responsable.structure_id)
     db.add(employe)
@@ -29,7 +31,7 @@ def creer_compte_employe(donnees: EmployeEntree,
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(409, "Cet identifiant de connexion est deja utilise.")
+        raise HTTPException(409, "Cet identifiant de connexion ou cette adresse e-mail est deja utilise.")
 
     return EmployeSortie(id=employe.id, nom=employe.nom, fonction=employe.fonction,
                          identifiantConnexion=employe.identifiantConnexion,

@@ -33,12 +33,14 @@ def s_inscrire(donnees: InscriptionEntree, db: Session = Depends(get_db)):
 
     if db.query(Utilisateur).filter_by(identifiantConnexion=r.identifiantConnexion).first():
         raise HTTPException(409, "Cet identifiant de connexion est deja utilise.")
+    if db.query(Utilisateur).filter_by(email=r.email).first():
+        raise HTTPException(409, "Cette adresse e-mail est deja utilisee.")
 
     # Etapes 4 et 5: enregistrement de la structure et creation du compte responsable
     structure = Structure(nom=s.nom, type=s.type, localisation=s.localisation,
                           referenceAutorisation=reference)
     responsable = Utilisateur(nom=r.nom, fonction=r.fonction,
-                              identifiantConnexion=r.identifiantConnexion,
+                              identifiantConnexion=r.identifiantConnexion, email=r.email,
                               motDePasse=hacher_mot_de_passe(r.motDePasse),
                               role=Role.responsable, structure=structure)
     db.add_all([structure, responsable])
@@ -48,7 +50,7 @@ def s_inscrire(donnees: InscriptionEntree, db: Session = Depends(get_db)):
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(409, "Inscription impossible: reference ou identifiant deja utilises.")
+        raise HTTPException(409, "Inscription impossible: reference, identifiant ou adresse e-mail deja utilises.")
 
     return InscriptionSortie(structure_id=structure.id, utilisateur_id=responsable.id,
                              message="Inscription enregistree. Vous pouvez vous connecter.")

@@ -57,7 +57,7 @@ def main() -> None:
             "structure": {"nom": "Laboratoire Jeu de Donnees", "type": "fabricant",
                           "localisation": "Dakar", "referenceAutorisation": "TEST-FAB-001"},
             "responsable": {"nom": "Responsable Jeu", "fonction": "Pharmacien",
-                            "identifiantConnexion": "labo.jeu", "motDePasse": MOT_DE_PASSE}})
+                            "identifiantConnexion": "labo.jeu", "email": "labo.jeu" + "@essai.sn", "motDePasse": MOT_DE_PASSE}})
         assert r.status_code == 201, r.text
         jeton = client.post("/auth/connexion", data={"username": "labo.jeu", "password": MOT_DE_PASSE})
         entete = {"Authorization": f"Bearer {jeton.json()['access_token']}"}

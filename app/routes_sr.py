@@ -43,9 +43,11 @@ def creer_responsable_sr(sr_id: str, donnees: ResponsableEntree,
         raise HTTPException(409, "Ce SR dispose deja d'un compte responsable.")
     if db.query(Utilisateur).filter_by(identifiantConnexion=donnees.identifiantConnexion).first():
         raise HTTPException(409, "Cet identifiant de connexion est deja utilise.")  # variante 4b
+    if db.query(Utilisateur).filter_by(email=donnees.email).first():
+        raise HTTPException(409, "Cette adresse e-mail est deja utilisee.")
 
     chef = Utilisateur(nom=donnees.nom, fonction=donnees.fonction,
-                       identifiantConnexion=donnees.identifiantConnexion,
+                       identifiantConnexion=donnees.identifiantConnexion, email=donnees.email,
                        motDePasse=hacher_mot_de_passe(donnees.motDePasse),
                        role=Role.responsable, structure_id=sr.id)
     db.add(chef)
@@ -53,7 +55,7 @@ def creer_responsable_sr(sr_id: str, donnees: ResponsableEntree,
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(409, "Compte impossible: identifiant deja utilise ou SR deja pourvu.")
+        raise HTTPException(409, "Compte impossible: identifiant ou adresse e-mail deja utilises, ou SR deja pourvu.")
     return EmployeSortie(id=chef.id, nom=chef.nom, fonction=chef.fonction,
                          identifiantConnexion=chef.identifiantConnexion, structure_id=sr.id,
                          message="Compte du pharmacien chef cree. Transmettez-lui son identifiant "

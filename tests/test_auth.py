@@ -10,7 +10,7 @@ def inscrire(client, identifiant="awa.diop", mdp="MotDePasse2026"):
         "structure": {"nom": "Laboratoire Test", "type": "fabricant",
                       "localisation": "Dakar", "referenceAutorisation": "TEST-FAB-001"},
         "responsable": {"nom": "Awa Diop", "fonction": "Pharmacien responsable",
-                        "identifiantConnexion": identifiant, "motDePasse": mdp}})
+                        "identifiantConnexion": identifiant, "email": identifiant + "@essai.sn", "motDePasse": mdp}})
     assert r.status_code == 201
     return r.json()
 
@@ -98,7 +98,7 @@ def test_un_employe_change_son_propre_mot_de_passe_sans_toucher_aux_autres(clien
     jeton = se_connecter(client).json()["access_token"]
     entete = {"Authorization": f"Bearer {jeton}"}
     r = client.post("/employes", headers=entete, json={"nom": "Moussa Fall", "fonction": "Preparateur",
-                    "identifiantConnexion": "moussa.fall", "motDePasse": "MotDePasse2026"})
+                    "identifiantConnexion": "moussa.fall", "email": "moussa.fall" + "@essai.sn", "motDePasse": "MotDePasse2026"})
     assert r.status_code == 201
     jeton_employe = se_connecter(client, "moussa.fall").json()["access_token"]
     assert changer(client, jeton_employe, "MotDePasse2026", "SecretEmploye88").status_code == 200

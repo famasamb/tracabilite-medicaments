@@ -20,7 +20,7 @@ schema_oauth2 = OAuth2PasswordBearer(tokenUrl="/auth/connexion")
 
 def creer_jeton(utilisateur: Utilisateur, duree: timedelta = DUREE_SESSION) -> str:
     """Fabrique le jeton signe qui prouve que l'utilisateur est connecte."""
-    contenu = {"sub": utilisateur.id, "role": utilisateur.role.value,
+    contenu = {"sub": utilisateur.id, "role": utilisateur.role.value, "v": utilisateur.versionSession or 0,
                "exp": datetime.now(timezone.utc) + duree}
     return jwt.encode(contenu, CLE_SECRETE, algorithm=ALGORITHME)
 
@@ -34,8 +34,8 @@ def utilisateur_courant(jeton: str = Depends(schema_oauth2), db: Session = Depen
     except jwt.PyJWTError:
         raise erreur
     utilisateur = db.get(Utilisateur, contenu.get("sub"))
-    if utilisateur is None:
-        raise erreur
+    if utilisateur is None or contenu.get("v", 0) != (utilisateur.versionSession or 0):
+        raise erreur   # compte supprime, ou mot de passe change depuis l'ouverture de cette session
     return utilisateur
 
 

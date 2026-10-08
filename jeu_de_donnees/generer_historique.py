@@ -23,7 +23,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 from app.codes import cle_de_controle_gtin  # noqa: E402
 from app.db import SessionLocal  # noqa: E402
 from app.main import app  # noqa: E402
-from app.models import (Evenement, StatutUnite, Structure, TypeOperation,  # noqa: E402
+from app.models import (Evenement, Lot, Produit, StatutUnite, Structure, TypeOperation,  # noqa: E402
                         Unite, Utilisateur, new_id)
 from app.references import charger_references  # noqa: E402
 
@@ -52,18 +52,13 @@ def inscrire(client, nom, type_, ville, reference, login) -> None:
     r = client.post("/structures/inscription", json={
         "structure": {"nom": nom, "type": type_, "localisation": ville, "referenceAutorisation": reference},
         "responsable": {"nom": f"Responsable {nom}", "fonction": "Responsable",
-                        "identifiantConnexion": login, "motDePasse": MOT_DE_PASSE}})
+                        "identifiantConnexion": login, "email": login + "@essai.sn", "motDePasse": MOT_DE_PASSE}})
     assert r.status_code == 201, r.text
 
 
 def entete(client, login) -> dict:
     r = client.post("/auth/connexion", data={"username": login, "password": MOT_DE_PASSE})
     return {"Authorization": f"Bearer {r.json()['access_token']}"}
-
-
-def identifiant_produit(client, entete_labo, nom) -> str:
-    """Identifiant du produit enregistre sous ce nom (recherche par l'API)."""
-    return next(p["id"] for p in client.get("/produits", headers=entete_labo, params={"q": nom}).json())
 
 
 def main() -> None:
@@ -86,7 +81,7 @@ def main() -> None:
         for ville in sorted({v for _, _, v in OFFICINES}):
             r = client.post(f"/sr/{sr_par_ville[ville]}/responsable", headers=pna, json={
                 "nom": f"Chef SR {ville}", "fonction": "Pharmacien chef",
-                "identifiantConnexion": f"sr.{ville.lower()}", "motDePasse": MOT_DE_PASSE})
+                "identifiantConnexion": f"sr.{ville.lower(), "email": f"sr.{ville.lower() + "@essai.sn"}", "motDePasse": MOT_DE_PASSE})
             assert r.status_code == 201, r.text
 
         # Le fabricant enregistre ses produits et serialise ses lots
@@ -97,11 +92,10 @@ def main() -> None:
                 "nom": nom, "composition": nom, "formePharmaceutique": forme, "conditionnement": cond,
                 "gtin": corps + str(cle_de_controle_gtin(corps))})
             assert r.status_code == 201, r.text
-            produit_id = identifiant_produit(client, labo, nom)
             for j in range(1, LOTS_PAR_PRODUIT + 1):
                 lot = f"HS-{i}{j:02d}"
                 r = client.post("/lots/serialisation", headers=labo, json={
-                    "produit_id": produit_id, "numeroLot": lot,
+                    "produit_id": r_produit(client, labo, nom), "numeroLot": lot,
                     "quantite": UNITES_PAR_LOT, "datePeremption": date(2028, 6, 30).isoformat()})
                 assert r.status_code == 201, r.text
                 with zipfile.ZipFile(io.BytesIO(r.content)) as archive:
@@ -151,6 +145,11 @@ def main() -> None:
     print(f"Periode: {lignes[0]['dateHeure']} a {lignes[-1]['dateHeure']}")
     for operation in ("expedition", "reception", "dispensation"):
         print(f"  {operation}: {sum(1 for l in lignes if l['typeOperation'] == operation)}")
+
+
+def r_produit(client, entete_labo, nom) -> str:
+    """Identifiant du produit enregistre sous ce nom (recherche par l'API)."""
+    return next(p["id"] for p in client.get("/produits", headers=entete_labo, params={"q": nom}).json())
 
 
 if __name__ == "__main__":

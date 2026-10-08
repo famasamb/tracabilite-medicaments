@@ -78,6 +78,10 @@ class Utilisateur(Base):
     identifiantConnexion: Mapped[str] = mapped_column(String(100), unique=True)
     motDePasse: Mapped[str] = mapped_column(String(300))  # on stockera un hash, jamais le mot de passe en clair
     role: Mapped[Role] = mapped_column(Enum(Role))
+    # Adresse e-mail (en minuscules): sert a recuperer un mot de passe oublie. Unique.
+    email: Mapped[str | None] = mapped_column(String(254), nullable=True)
+    # Augmente a chaque changement de mot de passe: les sessions ouvertes avant deviennent invalides
+    versionSession: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 
     # Association "employer" : un utilisateur appartient a une seule structure
     structure_id: Mapped[str] = mapped_column(ForeignKey("structures.id"))
@@ -91,7 +95,20 @@ class Utilisateur(Base):
         Index("uq_un_responsable_par_structure", "structure_id", unique=True,
               sqlite_where=text("role = 'responsable'"),
               postgresql_where=text("role = 'responsable'")),
+        Index("uq_utilisateurs_email", "email", unique=True),
     )
+
+
+class JetonReinitialisation(Base):
+    """Lien de reinitialisation de mot de passe: on ne garde que l'empreinte du jeton, jamais le jeton."""
+    __tablename__ = "jetons_reinitialisation"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    utilisateur_id: Mapped[str] = mapped_column(ForeignKey("utilisateurs.id", ondelete="CASCADE"), index=True)
+    empreinte: Mapped[str] = mapped_column(String(64), unique=True)
+    creeLe: Mapped[datetime] = mapped_column(DateTime, default=maintenant)
+    expireLe: Mapped[datetime] = mapped_column(DateTime)
+    utiliseLe: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class Produit(Base):
@@ -178,8 +195,8 @@ class Anomalie(Base):
 
     evenement_id: Mapped[str] = mapped_column(ForeignKey("evenements.id"), index=True)
     evenement: Mapped[Evenement] = relationship(back_populates="anomalies")
-    
-    
+
+
 class ReferenceAutorisation(Base):
     """Base de reference des autorisations officielles (donnees importees, pas une classe du domaine).
 

@@ -51,7 +51,7 @@ def test_gtin_deja_utilise_refuse(client):
 def test_un_employe_du_fabricant_peut_enregistrer(client):
     inscrire(client)
     client.post("/employes", json={"nom": "Moussa Fall", "fonction": "Preparateur",
-                "identifiantConnexion": "moussa.fall", "motDePasse": "MotDePasseEmploye1"},
+                "identifiantConnexion": "moussa.fall", "email": "moussa.fall" + "@essai.sn", "motDePasse": "MotDePasseEmploye1"},
                 headers=connecte(client))
     r = client.post("/produits", json=PRODUIT, headers=connecte(client, "moussa.fall", "MotDePasseEmploye1"))
     assert r.status_code == 201
@@ -61,7 +61,7 @@ def test_une_officine_ne_peut_pas_enregistrer_de_produit(client):
     client.post("/structures/inscription", json={
         "structure": {"nom": "Pharmacie Test", "type": "officine", "localisation": "Dakar",
                       "referenceAutorisation": "TEST-OFF-001"},
-        "responsable": {"nom": "Awa Diop", "fonction": "Pharmacien", "identifiantConnexion": "pharma1",
+        "responsable": {"nom": "Awa Diop", "fonction": "Pharmacien", "identifiantConnexion": "pharma1", "email": "pharma1" + "@essai.sn",
                         "motDePasse": "MotDePasse2026"}})
     r = client.post("/produits", json=PRODUIT, headers=connecte(client, "pharma1"))
     assert r.status_code == 403
@@ -95,7 +95,7 @@ def test_la_recherche_ne_montre_que_les_produits_de_son_laboratoire(client):
     client.post("/structures/inscription", json={
         "structure": {"nom": "Autre Laboratoire", "type": "fabricant", "localisation": "Thies",
                       "referenceAutorisation": "TEST-FAB-002"},
-        "responsable": {"nom": "Ibrahima Sow", "fonction": "Pharmacien", "identifiantConnexion": "labo2",
+        "responsable": {"nom": "Ibrahima Sow", "fonction": "Pharmacien", "identifiantConnexion": "labo2", "email": "labo2" + "@essai.sn",
                         "motDePasse": "MotDePasse2026"}})
     r = client.get("/produits", params={"q": "parace"}, headers=connecte(client, "labo2"))
     assert r.json() == []

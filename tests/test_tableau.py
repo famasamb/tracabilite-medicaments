@@ -10,7 +10,7 @@ AUJOURDHUI = datetime.now(timezone.utc).date()
 def creer_chef(client, pna, indice, identifiant):
     sr = client.get("/sr", headers=pna).json()[indice]
     r = client.post(f"/sr/{sr['id']}/responsable", headers=pna, json={
-        "nom": "Chef Test", "fonction": "Pharmacien chef", "identifiantConnexion": identifiant,
+        "nom": "Chef Test", "fonction": "Pharmacien chef", "identifiantConnexion": identifiant, "email": identifiant + "@essai.sn",
         "motDePasse": "MotDePasseChef1"})
     assert r.status_code == 201
     return sr["id"], connecte(client, identifiant, "MotDePasseChef1")

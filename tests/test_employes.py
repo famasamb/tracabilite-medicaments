@@ -1,7 +1,7 @@
 """Tests du cas Creer un compte employe (fiche 3)."""
 from tests.test_auth import inscrire, se_connecter
 
-EMPLOYE = {"nom": "Moussa Fall", "fonction": "Preparateur", "identifiantConnexion": "moussa.fall",
+EMPLOYE = {"nom": "Moussa Fall", "fonction": "Preparateur", "identifiantConnexion": "moussa.fall", "email": "moussa.fall" + "@essai.sn",
            "motDePasse": "MotDePasseEmploye1"}
 
 

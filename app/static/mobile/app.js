@@ -82,6 +82,7 @@ const ICONES = {
   employe: (t) => trait('<circle cx="10" cy="8" r="3.4"/><path d="M3.5 20c.7-3.4 3.2-5.2 6.5-5.2M18 12v6M15 15h6"/>', t),
   batiment: (t) => trait('<path d="M5 20V6l7-3 7 3v14"/><path d="M3 20h18M9 9h.01M9 13h.01M15 9h.01M15 13h.01M10.5 20v-3.5h3V20"/>', t),
   cle: (t) => trait('<circle cx="8" cy="15" r="4"/><path d="m11 12 8-8m-3 3 3 3"/>', t),
+  courriel: (t) => trait('<rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4 8 8 5.5L20 8"/>', t),
   plus: (t) => trait('<path d="M12 5v14M5 12h14"/>', t),
   telecharger: (t) => trait('<path d="M12 4v11m0 0-4-4m4 4 4-4"/><path d="M5 19h14"/>', t),
   loupe: (t) => trait('<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>', t),
@@ -212,6 +213,9 @@ function rendre() {
   etat.nettoyage?.(); etat.nettoyage = null;
   const hash = location.hash || "#/";
   if (hash === "#/inscription") { vueInscription(); return; }
+  if (hash === "#/mot-de-passe-oublie") { vueMotDePasseOublie(); return; }
+  const lien = hash.match(/^#\/reinitialiser(?:\/([\w-]+))?$/);
+  if (lien && (lien[1] || lireJetonLien())) { vueReinitialiser(lien[1] || lireJetonLien()); return; }
   if (!etat.jeton) { vueConnexion(); return; }
   if (hash === "#/connexion") { aller("#/"); return; }
   const p = etat.profil, type = p.structure_type;
@@ -220,6 +224,7 @@ function rendre() {
   if (hash === "#/resultat" && etat.resultat) { vueResultat(); return; }
   if (hash === "#/compte") { vueCompte(); return; }
   if (hash === "#/compte/mot-de-passe") { vueMotDePasse(); return; }
+  if (hash === "#/compte/courriel") { vueCourriel(); return; }
   if (type === "fabricant") {
     if (hash === "#/produits") { vueProduits(); return; }
     if (hash === "#/produits/nouveau") { vueProduitNouveau(); return; }
@@ -259,6 +264,7 @@ function vueConnexion(erreur = "") {
           <div class="saisie"><input name="mdp" type="password" autocomplete="current-password" required>
             <button type="button" class="oeil" data-action="oeil" aria-label="Afficher le mot de passe">${icone("oeil")}</button></div>
         </label>
+        <p class="oubli"><a href="#/mot-de-passe-oublie">Mot de passe oublié ?</a></p>
         <button class="bouton" type="submit">Se connecter</button>
       </form>
       </main>
@@ -460,6 +466,9 @@ function vueCompte() {
       <section class="compte-carte"><div class="avatar">${echapper(initiales(p.nom))}</div>
         <h2>${echapper(p.nom)}</h2><p>${echapper(p.fonction)}</p>
         <p>${echapper(p.structure_nom)}</p><span class="puce">${TYPES_STRUCTURE[p.structure_type] || p.structure_type}</span></section>
+      ${p.email
+        ? `<p class="courriel-compte">${icone("courriel", 18)}<span>${echapper(p.email)}</span><button class="lien" data-aller="#/compte/courriel">Modifier</button></p>`
+        : `<div class="avis-courriel" role="note"><strong>Ajoutez votre adresse e-mail</strong><p>Sans elle, vous ne pourrez pas récupérer votre compte si vous oubliez votre mot de passe.</p><button class="bouton discret" data-aller="#/compte/courriel">Ajouter mon adresse e-mail</button></div>`}
       <div style="margin-top:20px;display:grid;gap:12px"><button class="bouton discret" data-aller="#/compte/mot-de-passe">${icone("cle", 20)}Changer mon mot de passe</button>
       <button class="bouton discret" data-action="sortir">${icone("deconnexion", 20)}Se déconnecter</button></div>
     </div>
@@ -490,11 +499,103 @@ function vueMotDePasse() {
       ["confirmation", () => (brut("confirmation") === brut("nouveauMotDePasse") ? "" : "Les deux mots de passe ne sont pas identiques.")],
     ])) return;
     soumettre(form, "Enregistrement…", async () => {
-      await api("/auth/mot-de-passe", { methode: "POST", json: { motDePasseActuel: brut("motDePasseActuel"), nouveauMotDePasse: brut("nouveauMotDePasse") } });
+      const r = await api("/auth/mot-de-passe", { methode: "POST", json: { motDePasseActuel: brut("motDePasseActuel"), nouveauMotDePasse: brut("nouveauMotDePasse") } });
+      // Les autres appareils sont déconnectés; cet appareil reçoit un nouveau jeton
+      etat.jeton = r.access_token; ecrire("session", { jeton: etat.jeton, profil: etat.profil });
       afficherSucces({
         titre: "Mot de passe modifié",
-        sous: "Utilisez-le à votre prochaine connexion.",
+        sous: "Vos autres appareils ont été déconnectés. Utilisez le nouveau mot de passe à votre prochaine connexion.",
         boutons: [{ texte: "Retour au compte", clic: () => aller("#/compte") }],
+      });
+    });
+  });
+}
+
+
+// Adresse e-mail du compte (récupération du mot de passe)
+function vueCourriel() {
+  sousPage(etat.profil.email ? "Adresse e-mail" : "Ajouter mon e-mail", `
+    <p class="intro">Elle sert à vous envoyer un lien si vous oubliez votre mot de passe. Votre mot de passe est demandé pour confirmer.</p>
+    <form id="formulaire" novalidate>${zoneErreur}
+      ${champCourriel(etat.profil.email || "", "")}
+      ${champ("motDePasseActuel", "Votre mot de passe", { type: "password", mdp: true, autocomplete: "current-password", maxlength: 128 })}
+      <button class="bouton" type="submit">Enregistrer</button>
+    </form>`, "#/compte");
+  const form = document.getElementById("formulaire");
+  brancherChamps(form);
+  form.addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    if (!valider(form, [["email", regleCourriel], ["motDePasseActuel", requis("Saisissez votre mot de passe.")]])) return;
+    soumettre(form, "Enregistrement…", async () => {
+      const r = await api("/auth/courriel", { methode: "PUT", json: { email: form.email.value.trim(), motDePasseActuel: form.motDePasseActuel.value } });
+      etat.profil = { ...etat.profil, email: r.email }; ecrire("session", { jeton: etat.jeton, profil: etat.profil });
+      afficherSucces({ titre: "Adresse enregistrée", sous: "Vous pourrez récupérer votre compte à cette adresse.", lignes: [["Adresse e-mail", echapper(r.email), "serie"]],
+        boutons: [{ texte: "Retour au compte", clic: () => aller("#/compte") }] });
+    });
+  });
+}
+
+// Pages publiques: mot de passe oublié, puis choix du nouveau mot de passe par le lien reçu
+function pagePublique(titre, corps) {
+  racine.innerHTML = `<main class="page page-simple">
+    <header class="sous-entete"><button class="retour" data-action="retour" aria-label="Retour">${icone("retour")}</button><h1>${titre}</h1></header>
+    ${corps}</main>`;
+  racine.querySelector('[data-action="retour"]').addEventListener("click", () => aller("#/connexion"));
+}
+
+function vueMotDePasseOublie() {
+  pagePublique("Mot de passe oublié", `
+    <p class="intro">Saisissez l'adresse e-mail de votre compte. Nous vous envoyons un lien, valable 30 minutes, pour choisir un nouveau mot de passe.</p>
+    <form id="formulaire" novalidate>${zoneErreur}
+      ${champCourriel("", "")}
+      <button class="bouton" type="submit">Envoyer le lien</button>
+    </form>`);
+  const form = document.getElementById("formulaire");
+  brancherChamps(form);
+  form.email.focus({ preventScroll: true });
+  form.addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    if (!valider(form, [["email", regleCourriel]])) return;
+    soumettre(form, "Envoi…", async () => {
+      await api("/auth/mot-de-passe-oublie", { methode: "POST", json: { email: form.email.value.trim() } });
+      afficherSucces({
+        titre: "Vérifiez votre messagerie",
+        sous: "Si cette adresse correspond à un compte, un e-mail avec le lien vient d'être envoyé. Pensez à regarder les courriers indésirables.",
+        boutons: [{ texte: "Retour à la connexion", clic: () => aller("#/connexion") }],
+      });
+    });
+  });
+}
+
+// Le jeton du lien est gardé le temps de l'onglet (retour depuis la messagerie, rechargement), pas dans l'historique
+const lireJetonLien = () => { try { return sessionStorage.getItem("jetonLien"); } catch { return null; } };
+function vueReinitialiser(jeton) {
+  try { sessionStorage.setItem("jetonLien", jeton); } catch { /* stockage indisponible */ }
+  history.replaceState(null, "", "#/reinitialiser");
+  pagePublique("Nouveau mot de passe", `
+    <p class="intro">Choisissez un nouveau mot de passe d'au moins 8 caractères.</p>
+    <form id="formulaire" novalidate>${zoneErreur}
+      ${champ("nouveauMotDePasse", "Nouveau mot de passe", { type: "password", mdp: true, autocomplete: "new-password", maxlength: 128 })}
+      ${boutonGenerer}
+      ${champ("confirmation", "Confirmer le nouveau mot de passe", { type: "password", mdp: true, autocomplete: "new-password", maxlength: 128 })}
+      <button class="bouton" type="submit">Enregistrer le mot de passe</button>
+    </form>`);
+  const form = document.getElementById("formulaire");
+  brancherChamps(form);
+  form.addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    if (!valider(form, [
+      ["nouveauMotDePasse", regleMdp],
+      ["confirmation", () => (form.confirmation.value === form.nouveauMotDePasse.value ? "" : "Les deux mots de passe ne sont pas identiques.")],
+    ])) return;
+    soumettre(form, "Enregistrement…", async () => {
+      await api("/auth/reinitialiser-mot-de-passe", { methode: "POST", json: { jeton, nouveauMotDePasse: form.nouveauMotDePasse.value } });
+      etat.jeton = etat.profil = null; effacer("session");
+      try { sessionStorage.removeItem("jetonLien"); } catch { /* idem */ }
+      afficherSucces({
+        titre: "Mot de passe modifié",
+        sous: "Vous pouvez vous connecter avec votre nouveau mot de passe.",
+        boutons: [{ texte: "Se connecter", clic: () => aller("#/connexion") }],
       });
     });
   });
@@ -797,10 +898,15 @@ const regleNom = minimum(2, "Saisissez au moins 2 caractères.");
 const regleFonction = minimum(2, "Saisissez au moins 2 caractères.");
 const regleIdentifiant = minimum(3, "L'identifiant compte au moins 3 caractères.");
 const regleMdp = minimum(8, "Le mot de passe compte au moins 8 caractères.");
+const regleCourriel = (v) => (/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(v) ? "" : "Saisissez une adresse e-mail valide.");
+const champCourriel = (valeur = "", aide = "Sert à récupérer le mot de passe en cas d'oubli") =>
+  champ("email", "Adresse e-mail", { type: "email", valeur, inputmode: "email", autocomplete: "email", autocapitalize: "none", spellcheck: "false", maxlength: 254, aide });
 
 function texteGestion(e) {
   const d = e.detail || "";
   if (e.statut === 0) return "Le serveur est injoignable. Vérifiez votre connexion et réessayez.";
+  if (/adresse e-mail/i.test(d)) return /identifiant|reference/i.test(d) ? "Cette référence, cet identifiant ou cette adresse e-mail est déjà utilisé." : "Cette adresse e-mail est déjà utilisée.";
+  if (/lien invalide/i.test(d)) return "Ce lien n'est plus valable (expiré ou déjà utilisé). Refaites une demande.";
   if (/ne s'inscrit pas/i.test(d)) return "Un service régional ne s'inscrit pas lui-même : son compte responsable est créé par la Pharmacie nationale.";
   if (/aucune correspondance/i.test(d)) return "Cette référence d'autorisation est introuvable. Vérifiez-la, ou contactez l'ARP.";
   if (/structure est deja inscrite/i.test(d)) return "Une structure est déjà inscrite avec cette référence.";
@@ -908,20 +1014,21 @@ function vueInscription(etape = 1, saisi = {}) {
       ${champ("responsableNom", "Nom et prénom", { valeur: saisi.responsableNom || "", autocomplete: "name", maxlength: 200 })}
       ${champ("fonction", "Fonction", { valeur: saisi.fonction || "", aide: "Par exemple : pharmacien responsable", maxlength: 100 })}
       ${champ("identifiantConnexion", "Identifiant de connexion", { valeur: saisi.identifiantConnexion || "", autocomplete: "username", autocapitalize: "none", spellcheck: "false", maxlength: 100 })}
+      ${champCourriel(saisi.email || "")}
       ${champ("motDePasse", "Mot de passe", { type: "password", mdp: true, autocomplete: "new-password", aide: "8 caractères au moins", maxlength: 128 })}
       <button class="bouton" type="submit">Créer le compte</button>
     </form></main>`;
   const form = document.getElementById("formulaire");
-  racine.querySelector('[data-action="precedent"]').addEventListener("click", () => vueInscription(1, { ...saisi, responsableNom: form.responsableNom.value.trim(), fonction: form.fonction.value.trim(), identifiantConnexion: form.identifiantConnexion.value.trim() }));
+  racine.querySelector('[data-action="precedent"]').addEventListener("click", () => vueInscription(1, { ...saisi, responsableNom: form.responsableNom.value.trim(), fonction: form.fonction.value.trim(), identifiantConnexion: form.identifiantConnexion.value.trim(), email: form.email.value.trim() }));
   brancherChamps(form);
   form.addEventListener("submit", (ev) => {
     ev.preventDefault();
-    if (!valider(form, [["responsableNom", regleNom], ["fonction", regleFonction], ["identifiantConnexion", regleIdentifiant], ["motDePasse", (v) => (form.motDePasse.value.length >= 8 ? "" : "Le mot de passe compte au moins 8 caractères.")]])) return;
-    const actuel = { ...saisi, responsableNom: form.responsableNom.value.trim(), fonction: form.fonction.value.trim(), identifiantConnexion: form.identifiantConnexion.value.trim() };
+    if (!valider(form, [["responsableNom", regleNom], ["fonction", regleFonction], ["identifiantConnexion", regleIdentifiant], ["email", regleCourriel], ["motDePasse", (v) => (form.motDePasse.value.length >= 8 ? "" : "Le mot de passe compte au moins 8 caractères.")]])) return;
+    const actuel = { ...saisi, responsableNom: form.responsableNom.value.trim(), fonction: form.fonction.value.trim(), identifiantConnexion: form.identifiantConnexion.value.trim(), email: form.email.value.trim() };
     soumettre(form, "Création du compte…", async () => {
       await api("/structures/inscription", { methode: "POST", json: {
         structure: { nom: saisi.nom, type: saisi.type, localisation: saisi.localisation, referenceAutorisation: saisi.referenceAutorisation },
-        responsable: { nom: actuel.responsableNom, fonction: actuel.fonction, identifiantConnexion: actuel.identifiantConnexion, motDePasse: form.motDePasse.value },
+        responsable: { nom: actuel.responsableNom, fonction: actuel.fonction, identifiantConnexion: actuel.identifiantConnexion, email: actuel.email, motDePasse: form.motDePasse.value },
       } });
       identifiantInitial = actuel.identifiantConnexion;
       afficherSucces({
@@ -945,6 +1052,7 @@ function vueEquipe() {
       ${champ("nom", "Nom et prénom", { maxlength: 200 })}
       ${champ("fonction", "Fonction", { aide: "Par exemple : préparateur en pharmacie", maxlength: 100 })}
       ${champ("identifiantConnexion", "Identifiant de connexion", { autocapitalize: "none", spellcheck: "false", autocomplete: "off", maxlength: 100 })}
+      ${champCourriel("", "Adresse personnelle de cette personne : elle recevra le lien en cas de mot de passe oublié")}
       ${champ("motDePasse", "Mot de passe initial", { type: "password", mdp: true, autocomplete: "new-password", aide: "8 caractères au moins", maxlength: 128 })}
       ${boutonGenerer}
       <button class="bouton" type="submit">Créer le compte</button>
@@ -953,10 +1061,10 @@ function vueEquipe() {
   brancherChamps(form);
   form.addEventListener("submit", (ev) => {
     ev.preventDefault();
-    if (!valider(form, [["nom", regleNom], ["fonction", regleFonction], ["identifiantConnexion", regleIdentifiant], ["motDePasse", () => (form.motDePasse.value.length >= 8 ? "" : "Le mot de passe compte au moins 8 caractères.")]])) return;
+    if (!valider(form, [["nom", regleNom], ["fonction", regleFonction], ["identifiantConnexion", regleIdentifiant], ["email", regleCourriel], ["motDePasse", () => (form.motDePasse.value.length >= 8 ? "" : "Le mot de passe compte au moins 8 caractères.")]])) return;
     soumettre(form, "Création du compte…", async () => {
       const mdp = form.motDePasse.value;
-      const e = await api("/employes", { methode: "POST", json: { nom: form.nom.value.trim(), fonction: form.fonction.value.trim(), identifiantConnexion: form.identifiantConnexion.value.trim(), motDePasse: mdp } });
+      const e = await api("/employes", { methode: "POST", json: { nom: form.nom.value.trim(), fonction: form.fonction.value.trim(), identifiantConnexion: form.identifiantConnexion.value.trim(), email: form.email.value.trim(), motDePasse: mdp } });
       afficherSucces({
         titre: "Compte employé créé",
         sous: "Transmettez-lui son identifiant et son mot de passe initial.",
@@ -1150,6 +1258,7 @@ async function vueSRResponsable(id) {
       ${champ("nom", "Nom et prénom", { maxlength: 200 })}
       ${champ("fonction", "Fonction", { valeur: "Pharmacien chef", maxlength: 100 })}
       ${champ("identifiantConnexion", "Identifiant de connexion", { autocapitalize: "none", spellcheck: "false", autocomplete: "off", maxlength: 100 })}
+      ${champCourriel("", "Adresse personnelle de cette personne : elle recevra le lien en cas de mot de passe oublié")}
       ${champ("motDePasse", "Mot de passe initial", { type: "password", mdp: true, autocomplete: "new-password", aide: "8 caractères au moins", maxlength: 128 })}
       ${boutonGenerer}
       <button class="bouton" type="submit">Créer le compte</button>
@@ -1158,10 +1267,10 @@ async function vueSRResponsable(id) {
   brancherChamps(form);
   form.addEventListener("submit", (ev) => {
     ev.preventDefault();
-    if (!valider(form, [["nom", regleNom], ["fonction", regleFonction], ["identifiantConnexion", regleIdentifiant], ["motDePasse", () => (form.motDePasse.value.length >= 8 ? "" : "Le mot de passe compte au moins 8 caractères.")]])) return;
+    if (!valider(form, [["nom", regleNom], ["fonction", regleFonction], ["identifiantConnexion", regleIdentifiant], ["email", regleCourriel], ["motDePasse", () => (form.motDePasse.value.length >= 8 ? "" : "Le mot de passe compte au moins 8 caractères.")]])) return;
     soumettre(form, "Création du compte…", async () => {
       const mdp = form.motDePasse.value;
-      const e = await api(`/sr/${id}/responsable`, { methode: "POST", json: { nom: form.nom.value.trim(), fonction: form.fonction.value.trim(), identifiantConnexion: form.identifiantConnexion.value.trim(), motDePasse: mdp } });
+      const e = await api(`/sr/${id}/responsable`, { methode: "POST", json: { nom: form.nom.value.trim(), fonction: form.fonction.value.trim(), identifiantConnexion: form.identifiantConnexion.value.trim(), email: form.email.value.trim(), motDePasse: mdp } });
       afficherSucces({
         titre: "Compte responsable créé",
         sous: "Transmettez-lui son identifiant et son mot de passe initial.",
@@ -1177,6 +1286,16 @@ async function vueSRResponsable(id) {
 restaurerSession();
 window.addEventListener("hashchange", rendre);
 rendre();
+
+// Au démarrage, la session enregistrée est vérifiée: fermée si le mot de passe a changé ailleurs, profil remis à jour sinon
+if (etat.jeton) {
+  api("/auth/moi").then((profil) => {
+    if (!profil) return;
+    const change = JSON.stringify(profil) !== JSON.stringify(etat.profil);
+    etat.profil = profil; ecrire("session", { jeton: etat.jeton, profil });
+    if (change && location.hash === "#/compte") rendre();
+  }).catch((e) => { if (e.statut === 401) fermerSession(); /* hors connexion: on garde la session */ });
+}
 
 // La coque de l'application reste disponible sans réseau (adresse sécurisée ou localhost seulement)
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {

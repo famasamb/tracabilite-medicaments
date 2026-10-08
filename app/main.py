@@ -5,7 +5,8 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from .db import Base, engine
+from .db import engine
+from .migration import mettre_a_niveau
 from .routes_auth import router as routeur_auth
 from .routes_employes import router as routeur_employes
 from .routes_lots import router as routeur_lots
@@ -22,7 +23,7 @@ from . import models  # noqa: F401  (charge les classes pour creer les tables)
 @asynccontextmanager
 async def demarrage(app: FastAPI):
     """Au demarrage de l'API, on cree les tables si elles n'existent pas encore."""
-    Base.metadata.create_all(engine)
+    mettre_a_niveau(engine)
     yield
 
 

@@ -71,7 +71,7 @@ def test_reception_par_une_autre_officine_compte_comme_rupture(client):
 def test_un_employe_de_lofficine_peut_dispenser(client):
     serie, _, officine = preparer(client)
     client.post("/employes", headers=officine, json={
-        "nom": "Moussa Fall", "fonction": "Preparateur", "identifiantConnexion": "moussa.fall",
+        "nom": "Moussa Fall", "fonction": "Preparateur", "identifiantConnexion": "moussa.fall", "email": "moussa.fall" + "@essai.sn",
         "motDePasse": "MotDePasseEmploye1"})
     employe = connecte(client, "moussa.fall", "MotDePasseEmploye1")
     r = client.post("/dispensations", headers=employe, data={"numeroSerie": serie})

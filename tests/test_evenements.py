@@ -24,7 +24,7 @@ def inscrire_structure(client, type_, reference, identifiant):
         "structure": {"nom": f"Structure {identifiant}", "type": type_, "localisation": "Dakar",
                       "referenceAutorisation": reference},
         "responsable": {"nom": "Responsable Test", "fonction": "Responsable",
-                        "identifiantConnexion": identifiant, "motDePasse": "MotDePasse2026"}})
+                        "identifiantConnexion": identifiant, "email": identifiant + "@essai.sn", "motDePasse": "MotDePasse2026"}})
     assert r.status_code == 201
     return connecte(client, identifiant)
 
@@ -75,8 +75,8 @@ def test_image_illisible_avec_saisie_manuelle_utilise_la_saisie(client):
                     data={"typeOperation": "expedition", "numeroSerie": serie},
                     files={"image": ("flou.png", b"image floue", "image/png")})
     assert r.status_code == 201 and r.json()["numeroSerie"] == serie
-    
-    
+
+
 def test_reception_par_saisie_manuelle(client):
     images, _ = serialiser(client)
     serie = next(iter(images))

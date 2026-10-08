@@ -115,7 +115,7 @@ def test_un_fabricant_ne_peut_pas_serialiser_le_produit_dun_autre(client):
     client.post("/structures/inscription", json={
         "structure": {"nom": "Autre Laboratoire", "type": "fabricant", "localisation": "Thies",
                       "referenceAutorisation": "TEST-FAB-002"},
-        "responsable": {"nom": "Ibrahima Sow", "fonction": "Pharmacien", "identifiantConnexion": "labo2",
+        "responsable": {"nom": "Ibrahima Sow", "fonction": "Pharmacien", "identifiantConnexion": "labo2", "email": "labo2" + "@essai.sn",
                         "motDePasse": "MotDePasse2026"}})
     r = client.post("/lots/serialisation", json=lot(pid), headers=connecte(client, "labo2"))
     assert r.status_code == 403
@@ -125,7 +125,7 @@ def test_une_officine_ne_peut_pas_serialiser(client):
     client.post("/structures/inscription", json={
         "structure": {"nom": "Pharmacie Test", "type": "officine", "localisation": "Dakar",
                       "referenceAutorisation": "TEST-OFF-001"},
-        "responsable": {"nom": "Awa Diop", "fonction": "Pharmacien", "identifiantConnexion": "pharma1",
+        "responsable": {"nom": "Awa Diop", "fonction": "Pharmacien", "identifiantConnexion": "pharma1", "email": "pharma1" + "@essai.sn",
                         "motDePasse": "MotDePasse2026"}})
     r = client.post("/lots/serialisation", json=lot("x"), headers=connecte(client, "pharma1"))
     assert r.status_code == 403

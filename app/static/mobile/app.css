@@ -634,3 +634,19 @@ body { letter-spacing: -.006em; }
   .connexion-tete { padding-top: calc(env(safe-area-inset-top) + 16px); padding-bottom: 60px; }
 }
 
+
+/* Mot de passe oublié, e-mail du compte */
+.oubli { margin: -4px 0 16px; text-align: right; font-size: 15px; }
+.oubli a { color: var(--cobalt); font-weight: 600; text-decoration: none; padding: 6px 0 6px 12px; display: inline-block; }
+.oubli a:active { text-decoration: underline; }
+.courriel-compte { display: flex; align-items: center; gap: 10px; margin: 18px 0 0; color: var(--encre-douce); }
+.courriel-compte span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.avis-courriel { margin-top: 18px; padding: 16px; border-radius: 16px; background: var(--ambre-fond); color: var(--encre); }
+.avis-courriel p { margin: 6px 0 14px; color: var(--ambre); }
+.avis-courriel .bouton { background: var(--surface); }
+@media (max-height: 700px) {
+  .connexion-aide { display: none; }
+  .oubli { margin: -6px 0 10px; }
+  .oubli a { padding-top: 2px; padding-bottom: 2px; }
+}
+@media (max-height: 600px) { .connexion-tete { padding-bottom: 44px; } }

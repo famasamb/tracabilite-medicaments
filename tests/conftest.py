@@ -14,6 +14,15 @@ def _moteur_en_memoire():
                          poolclass=StaticPool)
 
 
+@pytest.fixture(autouse=True)
+def courriels(monkeypatch):
+    """Aucun courriel n'est envoye pendant les tests: ils sont ranges dans cette liste."""
+    envoyes = []
+    monkeypatch.setattr("app.courriel.envoyer", lambda destinataire, sujet, texte: envoyes.append(
+        {"a": destinataire, "sujet": sujet, "texte": texte}))
+    return envoyes
+
+
 @pytest.fixture
 def db():
     """Une base SQLite en memoire, toute neuve pour chaque test."""

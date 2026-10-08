@@ -6,7 +6,7 @@ def demande(reference="TEST-FAB-001", type_="fabricant", identifiant="resp.fab",
         "structure": {"nom": "Laboratoire Test", "type": type_,
                       "localisation": "Dakar", "referenceAutorisation": reference},
         "responsable": {"nom": "Awa Diop", "fonction": "Pharmacien responsable",
-                        "identifiantConnexion": identifiant, "motDePasse": mdp},
+                        "identifiantConnexion": identifiant, "email": identifiant + "@essai.sn", "motDePasse": mdp},
     }
 
 

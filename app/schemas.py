@@ -1,9 +1,25 @@
 """Formes des donnees echangees avec l'API (ce que l'application envoie et recoit)."""
+import re
 from datetime import date, datetime
+from typing import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import AfterValidator, BaseModel, Field
 
 from .models import Role, StatutUnite, TypeAnomalie, TypeOperation, TypeStructure
+
+
+_FORME_COURRIEL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]{2,}$")
+
+
+def _normaliser_courriel(valeur: str) -> str:
+    valeur = valeur.strip().lower()
+    if len(valeur) > 254 or not _FORME_COURRIEL.match(valeur):
+        raise ValueError("adresse e-mail invalide")
+    return valeur
+
+
+# Adresse e-mail validee et mise en minuscules
+Courriel = Annotated[str, AfterValidator(_normaliser_courriel)]
 
 
 class StructureEntree(BaseModel):
@@ -17,6 +33,7 @@ class ResponsableEntree(BaseModel):
     nom: str = Field(min_length=2, max_length=200)
     fonction: str = Field(min_length=2, max_length=100)
     identifiantConnexion: str = Field(min_length=3, max_length=100)
+    email: Courriel
     motDePasse: str = Field(min_length=8, max_length=128)
 
 
@@ -44,6 +61,7 @@ class ProfilSortie(BaseModel):
     structure_id: str
     structure_nom: str
     structure_type: TypeStructure
+    email: str | None = None
 
 
 class ChangementMotDePasse(BaseModel):
@@ -51,10 +69,25 @@ class ChangementMotDePasse(BaseModel):
     nouveauMotDePasse: str = Field(min_length=8, max_length=128)
 
 
+class DemandeReinitialisation(BaseModel):
+    email: Courriel
+
+
+class Reinitialisation(BaseModel):
+    jeton: str = Field(min_length=20, max_length=200)
+    nouveauMotDePasse: str = Field(min_length=8, max_length=128)
+
+
+class ChangementCourriel(BaseModel):
+    motDePasseActuel: str = Field(min_length=1, max_length=128)
+    email: Courriel
+
+
 class EmployeEntree(BaseModel):
     nom: str = Field(min_length=2, max_length=200)
     fonction: str = Field(min_length=2, max_length=100)
     identifiantConnexion: str = Field(min_length=3, max_length=100)
+    email: Courriel
     motDePasse: str = Field(min_length=8, max_length=128)
 
 
