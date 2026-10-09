@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from . import courriel
 from .auth import creer_jeton, utilisateur_courant
 from .db import get_db
-from .models import JetonReinitialisation, Utilisateur, maintenant
+from .models import JetonReinitialisation, TentativeConnexion, Utilisateur, maintenant
 from .schemas import (ChangementCourriel, ChangementMotDePasse, DemandeReinitialisation, JetonSortie,
                       ProfilSortie, Reinitialisation)
 from .securite import hacher_mot_de_passe, verifier_mot_de_passe
@@ -20,6 +20,8 @@ router = APIRouter(prefix="/auth", tags=["Authentification"])
 
 DUREE_LIEN = timedelta(minutes=30)
 DEMANDES_MAX_PAR_HEURE = 3
+ECHECS_MAX = 5                          # echecs de connexion de suite, pour un meme identifiant
+BLOCAGE = timedelta(minutes=15)         # duree pendant laquelle les echecs comptent, et du blocage
 MESSAGE_DEMANDE = ("Si cette adresse correspond a un compte, un e-mail contenant un lien de "
                    "reinitialisation vient d'etre envoye. Le lien est valable 30 minutes.")
 
@@ -28,15 +30,44 @@ def _empreinte(jeton: str) -> str:
     return hashlib.sha256(jeton.encode()).hexdigest()
 
 
+def _verifier_blocage(db: Session, cle: str) -> None:
+    """Refuse la connexion (429) si l'identifiant a deja ECHECS_MAX echecs recents."""
+    debut = maintenant() - BLOCAGE
+    echecs = (db.query(TentativeConnexion).filter(TentativeConnexion.identifiant == cle,
+                                                  TentativeConnexion.creeLe > debut)
+              .order_by(TentativeConnexion.creeLe).all())
+    if len(echecs) >= ECHECS_MAX:
+        reste = echecs[0].creeLe + BLOCAGE - maintenant()
+        minutes = max(1, -(-int(reste.total_seconds()) // 60))
+        raise HTTPException(429, f"Trop de tentatives de connexion. Reessayez dans {minutes} minute"
+                                 f"{'s' if minutes > 1 else ''}.",
+                            headers={"Retry-After": str(max(1, int(reste.total_seconds())))})
+
+
+def _noter_echec(db: Session, cle: str) -> None:
+    db.add(TentativeConnexion(identifiant=cle))
+    db.query(TentativeConnexion).filter(TentativeConnexion.creeLe < maintenant() - timedelta(days=1)).delete()
+    db.commit()
+
+
 @router.post("/connexion", response_model=JetonSortie)
 def se_connecter(formulaire: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    """Ouvre une session. Le champ `username` est l'identifiant de connexion."""
+    """Ouvre une session. Le champ `username` est l'identifiant de connexion.
+
+    Apres 5 echecs de suite pour un meme identifiant, la connexion est bloquee 15 minutes (429).
+    """
+    cle = formulaire.username.strip().lower()[:100]
+    _verifier_blocage(db, cle)
     utilisateur = db.query(Utilisateur).filter_by(identifiantConnexion=formulaire.username).first()
     if utilisateur is None:                                            # variante 3c
+        _noter_echec(db, cle)
         raise HTTPException(401, "Aucun compte ne correspond a cet identifiant. "
                                  "Contactez le responsable de votre structure.")
     if not verifier_mot_de_passe(formulaire.password, utilisateur.motDePasse):   # variante 3b
+        _noter_echec(db, cle)
         raise HTTPException(401, "Identifiant ou mot de passe incorrect.")
+    db.query(TentativeConnexion).filter(TentativeConnexion.identifiant == cle).delete()
+    db.commit()
     return JetonSortie(access_token=creer_jeton(utilisateur))
 
 

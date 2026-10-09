@@ -111,6 +111,15 @@ class JetonReinitialisation(Base):
     utiliseLe: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
+class TentativeConnexion(Base):
+    """Echec de connexion pour un identifiant: sert a bloquer un moment apres trop d'echecs de suite."""
+    __tablename__ = "tentatives_connexion"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    identifiant: Mapped[str] = mapped_column(String(100), index=True)
+    creeLe: Mapped[datetime] = mapped_column(DateTime, default=maintenant, index=True)
+
+
 class Produit(Base):
     __tablename__ = "produits"
 

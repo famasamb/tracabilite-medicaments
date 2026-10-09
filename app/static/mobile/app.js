@@ -185,6 +185,7 @@ async function api(chemin, options) {
 
 function texteConnexion(e) {
   if (e.statut === 0) return "Le serveur est injoignable. Vérifiez votre connexion et réessayez.";
+  if (e.statut === 429) { const m = /(\d+) minute/.exec(e.detail || ""); return m ? `Trop de tentatives de connexion. Réessayez dans ${m[1]} minute${m[1] > 1 ? "s" : ""}.` : "Trop de tentatives de connexion. Réessayez dans quelques minutes."; }
   if (/aucun compte/i.test(e.detail)) return "Aucun compte ne correspond à cet identifiant. Contactez le responsable de votre structure.";
   if (/incorrect/i.test(e.detail)) return "Identifiant ou mot de passe incorrect.";
   return e.detail || "Connexion impossible.";
