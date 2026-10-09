@@ -242,3 +242,5 @@ jeu_de_donnees/modeles/**
 !jeu_de_donnees/modeles/datamatrix/weights/
 !jeu_de_donnees/modeles/datamatrix/weights/best.pt
 !jeu_de_donnees/modeles/datamatrix/results.csv
+
+installer_style_final.py

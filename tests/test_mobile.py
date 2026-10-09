@@ -46,7 +46,6 @@ def test_tout_ce_que_le_service_worker_met_en_cache_existe(client):
     sw = client.get(ADRESSE + "sw.js").text
     coque = re.search(r"const COQUE = \[(.*?)\];", sw, re.S).group(1)
     fichiers = re.findall(r'"([^"]+)"', coque)
-    assert "carte.js" in fichiers
     for fichier in fichiers:
         assert client.get(ADRESSE + fichier).status_code == 200, fichier
 

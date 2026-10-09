@@ -2,8 +2,6 @@
 // Écrans: connexion (fiche 1), accueil, réception et expédition (fiche 7), dispensation (fiche 8),
 // statut d'une unité (fiche 9), compte. Tout passe par l'API, sur la même adresse que cette page.
 
-import { carte } from "./carte.js";
-
 const racine = document.getElementById("appli");
 
 /* ------------------------------------------------------------------ Données du métier */
@@ -67,6 +65,12 @@ const ICONES = {
   dispensation: (t) => trait('<rect x="2.5" y="8.5" width="19" height="7" rx="3.5" transform="rotate(-45 12 12)"/><path d="m9.2 9.2 5.6 5.6"/>', t),
   verifier: (t) => trait('<path d="M12 3 5 6v5.5c0 4.4 3 7.6 7 9.5 4-1.9 7-5.1 7-9.5V6l-7-3Z"/><path d="m9 12 2.2 2.2L15.5 10"/>', t),
   accueil: (t) => trait('<path d="M4 11 12 4l8 7"/><path d="M6 10v9h12v-9"/>', t),
+  entrer: (t) => trait('<path d="M3.5 12h10m-4-4 4 4-4 4"/><path d="M14 4.5h3.5A2.5 2.5 0 0 1 20 7v10a2.5 2.5 0 0 1-2.5 2.5H14"/>', t),
+  reinit: (t) => trait('<path d="M3.6 12a8.4 8.4 0 1 0 2.5-6M3.6 5v4.6h4.6"/><rect x="9" y="11.4" width="6" height="4.6" rx="1.2"/><path d="M10.2 11.4V10a1.8 1.8 0 0 1 3.6 0v1.4"/>', t),
+  ajoutCompte: (t) => trait('<path d="M2.8 11h5M5.3 8.5v5"/><circle cx="14" cy="8.2" r="3.4"/><path d="M8.4 19.5c.5-3 2.6-4.8 5.6-4.8s5.1 1.8 5.6 4.8z"/>', t),
+  usine: (t) => trait('<path d="M4 20V11l5 3v-3l5 3V5h3.5v15H4z"/><path d="M7.5 17.5h.01M12 17.5h.01"/>', t),
+  camion: (t) => trait('<path d="M2.5 7h11v9h-11zM13.5 10h4l3 3v3h-7"/><circle cx="7" cy="17.8" r="1.7"/><circle cx="16.5" cy="17.8" r="1.7"/>', t),
+  barres: (t) => trait('<path d="M5 20v-6M12 20V6M19 20v-10"/>', t),
   cadenas: (t) => trait('<rect x="5" y="10.5" width="14" height="9.5" rx="2.6"/><path d="M8.2 10.5V8a3.8 3.8 0 0 1 7.6 0v2.5M12 14.4v2"/>', t),
   flecheLongue: (t) => trait('<path d="M4.5 12h15m-5.5-5.5L19.5 12 14 17.5"/>', t),
   compte: (t) => trait('<circle cx="12" cy="8" r="3.6"/><path d="M5 20c.8-3.6 3.6-5.4 7-5.4s6.2 1.8 7 5.4"/>', t),
@@ -98,13 +102,27 @@ const icone = (nom, taille = 24) => ICONES[nom](taille);
 // La marque: les quatre coins d'un scan autour d'une pilule dont une moitié se découpe en modules de code
 function marque(taille = 32) {
   return `<svg class="marque" width="${taille}" height="${taille}" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-    <path d="M10 21V10h11M43 10h11v11M54 43v11H43M21 54H10V43" stroke="currentColor" stroke-width="4" stroke-linecap="square"/>
-    <g transform="rotate(-45 32 32)" fill="currentColor"><path d="M35 24H25a8 8 0 0 0 0 16h10z"/><rect x="37.0" y="24.0" width="4.2" height="4.2" /><rect x="37.0" y="29.8" width="4.2" height="4.2" /><rect x="37.0" y="35.6" width="4.2" height="4.2" /><rect x="42.8" y="24.0" width="4.2" height="4.2" /><rect x="42.8" y="29.8" width="4.2" height="4.2" /><rect x="48.6" y="24.0" width="4.2" height="4.2" /></g></svg>`;
+    <path class="coins" d="M10 21V10h11M43 10h11v11M54 43v11H43M21 54H10V43" stroke="currentColor" stroke-width="4" stroke-linecap="square"/>
+    <g class="pilule" transform="rotate(-45 32 32)" fill="currentColor"><path d="M35 24H25a8 8 0 0 0 0 16h10z"/><rect x="37.0" y="24.0" width="4.2" height="4.2" /><rect x="37.0" y="29.8" width="4.2" height="4.2" /><rect x="37.0" y="35.6" width="4.2" height="4.2" /><rect x="42.8" y="24.0" width="4.2" height="4.2" /><rect x="42.8" y="29.8" width="4.2" height="4.2" /><rect x="48.6" y="24.0" width="4.2" height="4.2" /></g></svg>`;
 }
 
 // Le motif de l'application: un DataMatrix en filigrane (la trame est dessinée en CSS)
 function motif() {
   return `<svg class="motif" viewBox="0 0 16 16" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true"><path d="M0 0h1v1h-1zM2 0h1v1h-1zM4 0h1v1h-1zM6 0h1v1h-1zM8 0h1v1h-1zM10 0h1v1h-1zM12 0h1v1h-1zM14 0h1v1h-1zM15 0h1v1h-1zM0 1h1v1h-1zM1 1h1v1h-1zM2 1h1v1h-1zM4 1h1v1h-1zM6 1h1v1h-1zM7 1h1v1h-1zM9 1h1v1h-1zM10 1h1v1h-1zM11 1h1v1h-1zM12 1h1v1h-1zM13 1h1v1h-1zM0 2h1v1h-1zM1 2h1v1h-1zM2 2h1v1h-1zM6 2h1v1h-1zM8 2h1v1h-1zM10 2h1v1h-1zM11 2h1v1h-1zM12 2h1v1h-1zM13 2h1v1h-1zM15 2h1v1h-1zM0 3h1v1h-1zM1 3h1v1h-1zM4 3h1v1h-1zM6 3h1v1h-1zM7 3h1v1h-1zM8 3h1v1h-1zM10 3h1v1h-1zM11 3h1v1h-1zM13 3h1v1h-1zM14 3h1v1h-1zM0 4h1v1h-1zM3 4h1v1h-1zM8 4h1v1h-1zM10 4h1v1h-1zM11 4h1v1h-1zM13 4h1v1h-1zM14 4h1v1h-1zM15 4h1v1h-1zM0 5h1v1h-1zM1 5h1v1h-1zM6 5h1v1h-1zM10 5h1v1h-1zM13 5h1v1h-1zM0 6h1v1h-1zM1 6h1v1h-1zM6 6h1v1h-1zM7 6h1v1h-1zM9 6h1v1h-1zM10 6h1v1h-1zM11 6h1v1h-1zM12 6h1v1h-1zM13 6h1v1h-1zM15 6h1v1h-1zM0 7h1v1h-1zM1 7h1v1h-1zM2 7h1v1h-1zM3 7h1v1h-1zM5 7h1v1h-1zM6 7h1v1h-1zM11 7h1v1h-1zM12 7h1v1h-1zM13 7h1v1h-1zM0 8h1v1h-1zM2 8h1v1h-1zM3 8h1v1h-1zM4 8h1v1h-1zM5 8h1v1h-1zM6 8h1v1h-1zM8 8h1v1h-1zM9 8h1v1h-1zM10 8h1v1h-1zM11 8h1v1h-1zM15 8h1v1h-1zM0 9h1v1h-1zM4 9h1v1h-1zM9 9h1v1h-1zM10 9h1v1h-1zM11 9h1v1h-1zM13 9h1v1h-1zM14 9h1v1h-1zM0 10h1v1h-1zM1 10h1v1h-1zM2 10h1v1h-1zM3 10h1v1h-1zM4 10h1v1h-1zM5 10h1v1h-1zM6 10h1v1h-1zM7 10h1v1h-1zM8 10h1v1h-1zM9 10h1v1h-1zM12 10h1v1h-1zM13 10h1v1h-1zM14 10h1v1h-1zM15 10h1v1h-1zM0 11h1v1h-1zM1 11h1v1h-1zM2 11h1v1h-1zM5 11h1v1h-1zM6 11h1v1h-1zM7 11h1v1h-1zM8 11h1v1h-1zM9 11h1v1h-1zM10 11h1v1h-1zM12 11h1v1h-1zM13 11h1v1h-1zM0 12h1v1h-1zM2 12h1v1h-1zM4 12h1v1h-1zM9 12h1v1h-1zM10 12h1v1h-1zM11 12h1v1h-1zM15 12h1v1h-1zM0 13h1v1h-1zM1 13h1v1h-1zM2 13h1v1h-1zM9 13h1v1h-1zM11 13h1v1h-1zM12 13h1v1h-1zM13 13h1v1h-1zM14 13h1v1h-1zM0 14h1v1h-1zM1 14h1v1h-1zM4 14h1v1h-1zM8 14h1v1h-1zM9 14h1v1h-1zM10 14h1v1h-1zM11 14h1v1h-1zM12 14h1v1h-1zM15 14h1v1h-1zM0 15h1v1h-1zM1 15h1v1h-1zM2 15h1v1h-1zM3 15h1v1h-1zM4 15h1v1h-1zM5 15h1v1h-1zM6 15h1v1h-1zM7 15h1v1h-1zM8 15h1v1h-1zM9 15h1v1h-1zM10 15h1v1h-1zM11 15h1v1h-1zM12 15h1v1h-1zM13 15h1v1h-1zM14 15h1v1h-1zM15 15h1v1h-1z"/></svg>`;
+}
+
+// Texture de modules DataMatrix pour l'en-tête de connexion (suite pseudo-aléatoire fixe, donc stable)
+function texture() {
+  let graine = 7, rects = "";
+  const alea = () => (graine = (graine * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  const colonnes = 22, lignes = 16, c = 18;
+  for (let y = 0; y < lignes; y++) {
+    for (let x = 0; x < colonnes; x++) {
+      const proba = 0.62 - y * 0.034 + (x > 11 ? 0.05 : 0);
+      if (alea() < proba) rects += `<rect x="${x * c}" y="${y * c}" width="${c - 5}" height="${c - 5}" rx="1.5" opacity="${(0.25 + alea() * 0.75).toFixed(2)}"/>`;
+    }
+  }
+  return `<svg class="motif texture" viewBox="0 0 ${colonnes * c} ${lignes * c}" preserveAspectRatio="xMidYMin slice" fill="currentColor" aria-hidden="true">${rects}</svg>`;
 }
 
 /* ------------------------------------------------------------------ État et stockage */
@@ -241,11 +259,11 @@ function vueConnexion(erreur = "") {
   racine.innerHTML = `
     <div class="connexion">
     <header class="connexion-tete">
-      ${carte()}
+      ${texture()}
       <div class="contenu">
-        ${marque(46)}
+        ${marque(38)}
         <h1>Traçabilité des médicaments</h1>
-        <p>De la fabrication à la dispensation.</p>
+        <p>Suivez chaque unité, de la fabrication à la dispensation.</p>
       </div>
     </header>
     <main class="connexion-corps">
@@ -254,20 +272,21 @@ function vueConnexion(erreur = "") {
       <form id="formulaire" novalidate>
         <div id="erreur" role="alert">${erreur ? blocErreur(erreur) : ""}</div>
         <label class="champ"><span>Identifiant de connexion</span>
-          <div class="saisie"><span class="pre">${icone("compte", 22)}</span><input name="identifiant" autocomplete="username" autocapitalize="none" spellcheck="false" value="${echapper(identifiantInitial)}" required></div>
+          <div class="saisie"><span class="pre">${icone("compte", 22)}</span><input name="identifiant" placeholder="Votre identifiant" autocomplete="username" autocapitalize="none" spellcheck="false" value="${echapper(identifiantInitial)}" required></div>
         </label>
         <label class="champ"><span>Mot de passe</span>
-          <div class="saisie"><span class="pre">${icone("cadenas", 22)}</span><input name="mdp" type="password" autocomplete="current-password" required>
+          <div class="saisie"><span class="pre">${icone("cadenas", 22)}</span><input name="mdp" type="password" placeholder="Votre mot de passe" autocomplete="current-password" required>
             <button type="button" class="oeil" data-action="oeil" aria-label="Afficher le mot de passe">${icone("oeil")}</button></div>
         </label>
-        <p class="oubli"><a href="#/mot-de-passe-oublie">Mot de passe oublié ?</a></p>
-        <button class="bouton" type="submit">Se connecter ${icone("flecheLongue", 22)}</button>
+        <button class="bouton" type="submit">${icone("entrer", 24)}Se connecter</button>
       </form>
-      <div class="ou" role="separator"><span>Ou</span></div>
-      <a class="bouton contour" href="#/inscription">${icone("batiment", 22)}Inscrire ma structure</a>
+      <nav class="liens-connexion" aria-label="Autres actions">
+        <a href="#/mot-de-passe-oublie">${icone("reinit", 24)}Mot de passe oublié ?</a>
+        <a href="#/inscription">${icone("ajoutCompte", 24)}Inscrire ma structure</a>
+      </nav>
       </main></div>`;
   const formulaire = document.getElementById("formulaire");
-  (identifiantInitial ? formulaire.mdp : formulaire.identifiant).focus({ preventScroll: true });
+  if (identifiantInitial) formulaire.mdp.focus({ preventScroll: true });
   formulaire.querySelector('[data-action="oeil"]').addEventListener("click", (ev) => {
     const visible = formulaire.mdp.type === "text";
     formulaire.mdp.type = visible ? "password" : "text";
@@ -291,7 +310,7 @@ function vueConnexion(erreur = "") {
     } catch (e) {
       etat.jeton = etat.profil = null;
       zone.innerHTML = blocErreur(texteConnexion(e));
-      bouton.disabled = false; bouton.innerHTML = `Se connecter ${icone("flecheLongue", 22)}`;
+      bouton.disabled = false; bouton.innerHTML = `${icone("entrer", 24)}Se connecter`;
     }
   });
 }
@@ -771,6 +790,9 @@ async function reduireImage(fichier) {
 /* ------------------------------------------------------------------ Résultat */
 
 function ligne(libelle, valeur, classe = "") { return `<div class="ligne"><dt>${libelle}</dt><dd class="${classe}">${valeur}</dd></div>`; }
+// Les détails secondaires se replient: l'essentiel se lit en premier
+const plusHtml = (lignes, titre = "Détails de l'enregistrement") => lignes.length
+  ? `<details class="plus"><summary>${titre}<span class="chevron">${icone("fleche", 18)}</span></summary><dl>${lignes.join("")}</dl></details>` : "";
 
 function vueResultat() {
   const r = etat.resultat;
@@ -797,12 +819,12 @@ function vueResultat() {
   lignes.push(ligne("Opération", o.titre));
   lignes.push(ligne("Date", dateLongue(r.donnees ? r.donnees.dateHeure : r.date)));
   const avecPosition = r.donnees ? r.donnees.latitude != null : r.position;
-  lignes.push(ligne("Position", avecPosition ? "Enregistrée" : "Non transmise"));
-  if (r.donnees && r.donnees.methodeLecture) lignes.push(ligne("Lecture", LECTURES[r.donnees.methodeLecture] || echapper(r.donnees.methodeLecture)));
+  const plus = [ligne("Position", avecPosition ? "Enregistrée" : "Non transmise")];
+  if (r.donnees && r.donnees.methodeLecture) plus.push(ligne("Lecture", LECTURES[r.donnees.methodeLecture] || echapper(r.donnees.methodeLecture)));
   racine.innerHTML = `<main class="resultat ${genre}">
-    <div class="haut"><div class="sceau" aria-hidden="true">${symbole}</div>
+    <div class="haut">${motif()}<div class="sceau" aria-hidden="true">${symbole}</div>
       <h1 role="status">${titre}</h1><p class="sous-titre">${sous}</p></div>
-    <div class="corps"><dl class="fiche">${lignes.join("")}</dl>
+    <div class="corps"><dl class="fiche">${lignes.join("")}</dl>${plusHtml(plus)}
     ${genre !== "ok" ? `<p class="avis">${AVIS}</p>` : ""}
     <div class="bas"><button class="bouton" data-action="encore">${icone("scan", 22)}Scanner une autre unité</button>
     <button class="bouton discret" data-action="fin">Terminer</button></div></div></main>`;
@@ -824,16 +846,17 @@ function vueStatut(r) {
     dernier ? ligne("Dernier mouvement", `${typeOp[dernier.typeOperation] || dernier.typeOperation}<br><small style="font-weight:500;color:var(--encre-douce)">${dateLongue(dernier.dateHeure)}</small>`)
       : ligne("Dernier mouvement", "Aucun"),
   ];
+  const plus = [];
   if (dernier && dernier.latitude != null) {
-    lignes.push(ligne("Lieu", `<a href="https://www.openstreetmap.org/?mlat=${dernier.latitude}&mlon=${dernier.longitude}#map=15/${dernier.latitude}/${dernier.longitude}" target="_blank" rel="noopener" style="color:var(--pin)">Voir sur la carte</a>`));
+    plus.push(ligne("Lieu", `<a href="https://www.openstreetmap.org/?mlat=${dernier.latitude}&mlon=${dernier.longitude}#map=15/${dernier.latitude}/${dernier.longitude}" target="_blank" rel="noopener" style="color:var(--indigo)">Voir sur la carte</a>`));
   }
-  if (s.methodeLecture) lignes.push(ligne("Lecture", LECTURES[s.methodeLecture] || echapper(s.methodeLecture)));
+  if (s.methodeLecture) plus.push(ligne("Lecture", LECTURES[s.methodeLecture] || echapper(s.methodeLecture)));
   if (anomalie) lignes.push(ligne("Anomalie", `<span class="etat ambre">${ANOMALIES[anomalie.typeAnomalie] || anomalie.typeAnomalie}</span><br><small style="font-weight:500;color:var(--encre-douce)">${anomalie.statut === "a_verifier" ? "À vérifier" : echapper(anomalie.statut)} · ${dateLongue(anomalie.dateDetection)}</small>`));
   racine.innerHTML = `<main class="resultat ${genre}">
-    <div class="haut"><div class="sceau" aria-hidden="true">${symbole}</div>
+    <div class="haut">${motif()}<div class="sceau" aria-hidden="true">${symbole}</div>
     <h1 role="status">${active ? "Identifiant actif" : "Identifiant désactivé"}</h1>
     <p class="sous-titre">${active ? "L'unité peut encore circuler dans le circuit." : "L'unité a été remise à un patient : son identifiant ne doit plus servir."}</p></div>
-    <div class="corps"><dl class="fiche">${lignes.join("")}</dl>
+    <div class="corps"><dl class="fiche">${lignes.join("")}</dl>${plusHtml(plus, "Détails de la lecture")}
     ${anomalie ? `<p class="avis">${AVIS}</p>` : ""}
     <div class="bas"><button class="bouton" data-action="encore">${icone("scan", 22)}Vérifier une autre unité</button>
     <button class="bouton discret" data-action="fin">Terminer</button></div></div></main>`;
