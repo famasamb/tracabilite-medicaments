@@ -1,9 +1,11 @@
+import os
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
+os.environ["TRACABILITE_SANS_ENV"] = "1"   # les tests ignorent le fichier .env (secrets, vraie base)
 from app.db import Base, get_db
 from app.main import app as application
 from app.references import charger_references

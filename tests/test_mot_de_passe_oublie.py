@@ -231,3 +231,23 @@ def test_sans_configuration_le_courriel_est_affiche_dans_la_console(monkeypatch,
     monkeypatch.delenv("SMTP_HOTE", raising=False)
     ENVOYER_POUR_DE_VRAI("awa@essai.sn", "Sujet", "Lien: http://exemple")
     assert "COURRIEL NON ENVOYE" in capsys.readouterr().out
+
+
+def test_le_gabarit_echappe_le_html():
+    texte, page = _courriel.gabarit("<b>Titre</b>", ["a < b & c"], bouton=("Aller", 'http://x/"onclick="y'))
+    assert "<b>Titre</b>" not in page and "&lt;b&gt;" in page and 'onclick="y' not in page.replace("&quot;", "")
+
+
+def test_lecture_du_fichier_env(tmp_path, monkeypatch):
+    from app.config import charger_env
+    monkeypatch.delenv("TRACABILITE_SANS_ENV")
+    for nom in ("A_TESTER", "DEJA", "ENTRE_GUILLEMETS"):
+        monkeypatch.delenv(nom, raising=False)
+    monkeypatch.setenv("DEJA", "environnement")
+    fichier = tmp_path / ".env"
+    fichier.write_text('# commentaire\nA_TESTER=valeur\nDEJA=fichier\nENTRE_GUILLEMETS="avec espaces"\n', encoding="utf-8")
+    assert charger_env(fichier) == 2
+    import os
+    assert os.environ["A_TESTER"] == "valeur" and os.environ["DEJA"] == "environnement"
+    assert os.environ["ENTRE_GUILLEMETS"] == "avec espaces"
+    monkeypatch.delenv("A_TESTER"); monkeypatch.delenv("ENTRE_GUILLEMETS")
