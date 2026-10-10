@@ -52,3 +52,11 @@ def test_une_photo_illisible_compte_comme_non_lue(tmp_path):
     cv2.imwrite(str(tmp_path / "flou" / "AAA111__1.png"), np.full((200, 200), 128, np.uint8))
     r = ep.evaluer_dossier(tmp_path, None)[0]
     assert r["lu_classique"] == "" and r["ok_classique"] == 0
+
+
+def test_les_groupes_de_l_entrainement_sont_lus_dans_repartition_csv(tmp_path, monkeypatch):
+    monkeypatch.setattr(ep, "DOSSIER", tmp_path)
+    assert ep.groupes_yolo() == {}          # fichier absent: pas d'erreur
+    (tmp_path / "repartition.csv").write_text(
+        "fichier,numeroSerie,groupe\npropres/AAA111.png,AAA111,test\npropres/BBB222.png,BBB222,train\n", encoding="utf-8")
+    assert ep.groupes_yolo() == {"AAA111": "test", "BBB222": "train"}

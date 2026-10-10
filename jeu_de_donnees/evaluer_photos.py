@@ -27,6 +27,15 @@ TAILLE_MAX_APPLICATION = 5 * 1024 * 1024        # limite de l'application (obten
 METHODES = ("classique", "deep_learning", "hybride")
 
 
+def groupes_yolo() -> dict[str, str]:
+    """Numero de serie -> groupe (train, val, test) de l'entrainement YOLO; vide si repartition.csv est absent."""
+    chemin = DOSSIER / "repartition.csv"
+    if not chemin.exists():
+        return {}
+    with open(chemin, newline="", encoding="utf-8") as f:
+        return {l["numeroSerie"]: l["groupe"] for l in csv.DictReader(f)}
+
+
 def serie(texte: str | None) -> str | None:
     return extraire_numero_serie(texte) if texte else None
 
@@ -123,6 +132,9 @@ def main() -> None:
     if localiseur is None:
         print("Modele YOLO absent ou ultralytics manquant: seule la methode classique est evaluee.")
     resultats = evaluer_dossier(PHOTOS, localiseur)
+    groupes = groupes_yolo()
+    for r in resultats:
+        r["groupe"] = groupes.get(r["attendu"], "inconnu")
     resume = synthetiser(resultats)
     ecrire(SORTIE / "lectures.csv", resultats)
     ecrire(SORTIE / "synthese.csv", resume)
@@ -133,6 +145,18 @@ def main() -> None:
         precision = f"{100 * l['precision']:.0f} %" if l["precision"] != "" else "-"
         print(f"  {l['condition']:<16}{l['methode']:<15}{l['photos']:>7}{100 * l['rappel']:>8.0f} %"
               f"{precision:>11}{l['fausses']:>9}{l['tempsMoyenMs']:>8.0f}")
+    par_groupe = defaultdict(int)
+    for r in resultats:
+        par_groupe[r["groupe"]] += 1
+    print("\nCodes photographies par groupe de l'entrainement YOLO: "
+          + ", ".join(f"{g} {n}" for g, n in sorted(par_groupe.items())))
+    test = [r for r in resultats if r["groupe"] == "test"]
+    if test and len(test) < len(resultats):
+        print("Sur les seules photos de codes du groupe test (jamais vus par YOLO): "
+              + ", ".join(f"{m} {100 * sum(r[f'ok_{m}'] for r in test) / len(test):.0f} %" for m in METHODES)
+              + f" ({len(test)} photos)")
+    elif len(test) < len(resultats):
+        print("Attention: aucune photo d'un code du groupe test, YOLO a peut-etre vu ces codes pendant l'entrainement.")
     echecs = [r["fichier"] for r in resultats if not r["ok_hybride"]]
     if echecs:
         print("\nPhotos non lues (ou mal lues) par l'hybride:", ", ".join(echecs))
