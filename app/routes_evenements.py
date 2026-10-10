@@ -2,13 +2,16 @@
 import logging
 import re
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
 from .auth import utilisateur_courant
 from .lecture import lire_hybride
 from .db import get_db
+from .horsligne import date_de_l_operation, evenement_deja_enregistre, verifier_identifiant_client
 from .models import (Anomalie, Evenement, StatutUnite, TypeAnomalie, TypeOperation,
                      TypeStructure, Unite, Utilisateur)
 from .schemas import EvenementSortie
@@ -72,6 +75,29 @@ async def obtenir_unite(db: Session, image: UploadFile | None, numero_serie: str
     return unite
 
 
+def sortie_d_un_evenement_existant(evenement: Evenement) -> EvenementSortie:
+    """Resultat d'une operation deja enregistree, reconstruit depuis la base (envoi repete)."""
+    anomalie = evenement.anomalies[0] if evenement.anomalies else None
+    if evenement.typeOperation == TypeOperation.dispensation and anomalie is not None \
+            and anomalie.typeAnomalie == TypeAnomalie.reutilisationIdentifiant:
+        raise HTTPException(409, "Dispensation non validee: cet identifiant est deja desactive. "
+                                 "Reutilisation possible, une alerte est soumise a verification.")
+    if anomalie is None:
+        message = "Dispensation enregistree." if evenement.typeOperation == TypeOperation.dispensation else "Evenement enregistre."
+    elif anomalie.typeAnomalie == TypeAnomalie.reutilisationIdentifiant:
+        message = "Enregistre avec une alerte: identifiant deja desactive, a verifier."
+    elif evenement.typeOperation == TypeOperation.dispensation:
+        message = ("Dispensation enregistree avec une alerte: aucune reception par cette officine "
+                   "dans l'historique, a verifier.")
+    else:
+        message = "Enregistre avec une alerte: aucune expedition de cette unite dans l'historique, a verifier."
+    return EvenementSortie(id=evenement.id, numeroSerie=evenement.numeroSerie,
+                           typeOperation=evenement.typeOperation, dateHeure=evenement.dateHeure,
+                           latitude=evenement.latitude, longitude=evenement.longitude,
+                           alerte=anomalie is not None, message=message,
+                           typeAnomalie=anomalie.typeAnomalie.value if anomalie else None)
+
+
 @router.post("", response_model=EvenementSortie, status_code=201)
 async def enregistrer_evenement(
         typeOperation: TypeOperation = Form(description="reception ou expedition"),
@@ -79,6 +105,9 @@ async def enregistrer_evenement(
         numeroSerie: str | None = Form(default=None, description="Saisie manuelle si le code est illisible"),
         latitude: float | None = Form(default=None, ge=-90, le=90),
         longitude: float | None = Form(default=None, ge=-180, le=180),
+        dateHeure: datetime | None = Form(default=None, description="Date reelle de l'operation (operation faite sans reseau)"),
+        identifiantClient: str | None = Form(default=None, description="Identifiant fabrique par le telephone"),
+        reponse: Response = None,
         utilisateur: Utilisateur = Depends(utilisateur_courant),
         db: Session = Depends(get_db)):
     """Enregistre la reception ou l'expedition d'une unite, a partir de l'image de son code ou de son identifiant saisi."""
@@ -89,12 +118,20 @@ async def enregistrer_evenement(
     if (latitude is None) != (longitude is None):
         raise HTTPException(422, "Fournissez la latitude et la longitude ensemble, ou aucune des deux.")
 
+    # Operation deja recue (envoi repete apres une coupure): on renvoie le meme resultat, sans doublon
+    identifiantClient = verifier_identifiant_client(identifiantClient)
+    existant = evenement_deja_enregistre(db, utilisateur, identifiantClient)
+    if existant is not None:
+        reponse.status_code = 200
+        return sortie_d_un_evenement_existant(existant)
+
     # Etapes 1 a 3: lecture du code (ou saisie manuelle), puis verification dans la base centrale
     unite = await obtenir_unite(db, image, numeroSerie)
 
     # Etapes 4 et 5: construction et enregistrement de l'evenement
     evenement = Evenement(typeOperation=typeOperation, latitude=latitude, longitude=longitude,
-                          numeroSerie=unite.numeroSerie, utilisateur_id=utilisateur.id)
+                          numeroSerie=unite.numeroSerie, utilisateur_id=utilisateur.id,
+                          dateHeure=date_de_l_operation(dateHeure), identifiantClient=identifiantClient)
     db.add(evenement)
 
     # Variante 3b: unite deja desactivee, l'evenement est enregistre avec une alerte a verifier

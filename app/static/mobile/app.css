@@ -964,3 +964,17 @@ strong { font-weight: 650; }
 /* Le titre et la phrase d'accroche restent visibles, même sur écran court */
 .connexion-tete p { display: block !important; }
 .connexion-tete .contenu { margin-top: auto; }
+
+
+/* Mode hors ligne */
+.pastille.attente { background: #e3ebe8; color: #3d5f57; }
+.recent .droite .attente { color: #3d5f57; }
+.resultat.attente { --teinte: #3d5f57; --fond: #d3e0db; --fond2: #eaf1ee; }
+#reseau { margin-top: 8px; }
+.recent .texte .motif { display: block; margin-top: 2px; color: var(--vermillon); font-size: 12.5px; font-weight: 600; }
+.bandeau-reseau { display: flex; align-items: center; gap: 12px; margin: 0 0 14px; padding: 12px 14px; border-radius: 16px; background: var(--ambre-fond); color: var(--encre); font-size: 14px; line-height: 1.35; }
+.bandeau-reseau strong { display: block; font-weight: 700; }
+.bandeau-reseau .puce-reseau { flex: none; width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; background: rgba(255, 255, 255, .7); color: var(--ambre); }
+.bandeau-reseau.calme { background: #e3ebe8; }
+.bandeau-reseau.calme .puce-reseau { color: #3d5f57; }
+.bandeau-reseau button { margin-left: auto; flex: none; min-height: 40px; padding: 0 16px; border: 0; border-radius: 12px; background: #0f6b57; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }

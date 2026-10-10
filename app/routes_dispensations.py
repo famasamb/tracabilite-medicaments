@@ -1,12 +1,15 @@
 """Cas d'utilisation Enregistrer la dispensation (fiche 8)."""
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile
 from sqlalchemy.orm import Session
 
 from .auth import utilisateur_courant
 from .db import get_db
+from .horsligne import date_de_l_operation, evenement_deja_enregistre, verifier_identifiant_client
 from .models import (Anomalie, Evenement, StatutUnite, TypeAnomalie, TypeOperation,
                      TypeStructure, Utilisateur)
-from .routes_evenements import obtenir_unite
+from .routes_evenements import obtenir_unite, sortie_d_un_evenement_existant
 from .schemas import EvenementSortie
 
 router = APIRouter(prefix="/dispensations", tags=["Dispensation"])
@@ -26,6 +29,9 @@ async def enregistrer_dispensation(
         numeroSerie: str | None = Form(default=None, description="Saisie manuelle si le code est illisible"),
         latitude: float | None = Form(default=None, ge=-90, le=90),
         longitude: float | None = Form(default=None, ge=-180, le=180),
+        dateHeure: datetime | None = Form(default=None, description="Date reelle de l'operation (operation faite sans reseau)"),
+        identifiantClient: str | None = Form(default=None, description="Identifiant fabrique par le telephone"),
+        reponse: Response = None,
         utilisateur: Utilisateur = Depends(utilisateur_courant),
         db: Session = Depends(get_db)):
     """Enregistre la remise d'une unite au patient et desactive definitivement son identifiant."""
@@ -34,13 +40,21 @@ async def enregistrer_dispensation(
     if (latitude is None) != (longitude is None):
         raise HTTPException(422, "Fournissez la latitude et la longitude ensemble, ou aucune des deux.")
 
+    # Operation deja recue (envoi repete apres une coupure): meme resultat, sans doublon
+    identifiantClient = verifier_identifiant_client(identifiantClient)
+    existant = evenement_deja_enregistre(db, utilisateur, identifiantClient)
+    if existant is not None:
+        reponse.status_code = 200
+        return sortie_d_un_evenement_existant(existant)
+
     # Etapes 1 et 2: lecture du code (ou saisie manuelle)
     unite = await obtenir_unite(db, image, numeroSerie)
 
     # Etape 4: construction de l'evenement de dispensation
     evenement = Evenement(typeOperation=TypeOperation.dispensation, latitude=latitude,
                           longitude=longitude, numeroSerie=unite.numeroSerie,
-                          utilisateur_id=utilisateur.id)
+                          utilisateur_id=utilisateur.id, dateHeure=date_de_l_operation(dateHeure),
+                          identifiantClient=identifiantClient)
     db.add(evenement)
 
     # Variante 3b: identifiant deja desactive. Reutilisation possible: la dispensation n'est pas

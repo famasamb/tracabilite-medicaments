@@ -180,6 +180,8 @@ class Evenement(Base):
     latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     synchronise: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Identifiant fabrique par le telephone pour une operation faite sans reseau (evite les doublons a la synchronisation)
+    identifiantClient: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     # Association "avoir pour historique" : un evenement concerne une seule unite
     numeroSerie: Mapped[str] = mapped_column(ForeignKey("unites.numeroSerie"), index=True)
@@ -188,6 +190,8 @@ class Evenement(Base):
     # Association "enregistrer" : un evenement est enregistre par un seul utilisateur
     utilisateur_id: Mapped[str] = mapped_column(ForeignKey("utilisateurs.id"))
     utilisateur: Mapped[Utilisateur] = relationship(back_populates="evenements")
+
+    __table_args__ = (Index("uq_evenement_client", "utilisateur_id", "identifiantClient", unique=True),)
 
     # Association "reveler" : un evenement peut reveler plusieurs anomalies
     anomalies: Mapped[list["Anomalie"]] = relationship(back_populates="evenement")

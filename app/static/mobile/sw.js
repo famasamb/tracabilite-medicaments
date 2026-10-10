@@ -1,6 +1,6 @@
 // Service worker: l'application s'ouvre même sans réseau (coque de l'application seulement).
-// Les appels à l'API ne sont jamais mis en cache. Le mode hors ligne des opérations viendra plus tard.
-const VERSION = "v15";
+// Les appels à l'API ne sont jamais mis en cache. Les opérations faites sans réseau sont gardées par app.js (IndexedDB) puis envoyées au retour du réseau.
+const VERSION = "v16";
 const COQUE = ["./", "app.css", "app.js", "manifest.webmanifest", "icons/icone.svg",
   "fonts/bricolage-grotesque-latin-wght-normal.woff2", "fonts/hanken-grotesk-latin-400-normal.woff2",
   "fonts/hanken-grotesk-latin-500-normal.woff2", "fonts/hanken-grotesk-latin-600-normal.woff2",

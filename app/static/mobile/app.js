@@ -82,6 +82,7 @@ const ICONES = {
   galerie: (t) => trait('<rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4 17 5-4.5 4 3 3-2.5 4 3.5"/>', t),
   clavier: (t) => trait('<rect x="2.5" y="6" width="19" height="12" rx="3"/><path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M7 14h10"/>', t),
   fermer: (t) => trait('<path d="M6 6l12 12M18 6 6 18"/>', t),
+  horloge: (t) => trait('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>', t),
   coche: (t) => trait('<path d="m5 12.5 4.5 4.5L19 7.5"/>', t),
   attention: (t) => trait('<path d="M12 4 2.8 19.5h18.4L12 4Z"/><path d="M12 10v4.2M12 17.2h.01"/>', t),
   croix: (t) => trait('<path d="M6 6l12 12M18 6 6 18"/>', t),
@@ -127,7 +128,7 @@ function texture() {
 
 /* ------------------------------------------------------------------ État et stockage */
 
-const etat = { jeton: null, profil: null, resultat: null, nettoyage: null, produit: null };
+const etat = { jeton: null, profil: null, resultat: null, nettoyage: null, produit: null, attente: 0 };
 
 function lire(cle) { try { return JSON.parse(localStorage.getItem(cle)); } catch { return null; } }
 function ecrire(cle, valeur) { try { localStorage.setItem(cle, JSON.stringify(valeur)); } catch { /* stockage indisponible */ } }
@@ -150,19 +151,125 @@ function noterRecent(entree) {
   ecrire(cleRecents(), liste);
 }
 
+function majRecent(id, modif) {
+  const liste = recents();
+  const i = liste.findIndex((r) => r.id === id);
+  if (i < 0) return;
+  liste[i] = { ...liste[i], ...modif };
+  ecrire(cleRecents(), liste);
+}
+
+/* ------------------------------------------------------------------ Opérations sans réseau (file d'attente) */
+// Sans réseau, l'opération est gardée sur le téléphone (IndexedDB) avec sa date, sa position et la photo du code.
+// Elle part dès que la connexion revient, dans l'ordre où elle a été faite. Chaque opération porte un identifiant
+// propre: si l'envoi est répété (réponse perdue, coupure), le serveur ne l'enregistre qu'une fois.
+
+const BASE_FILE = "tracabilite-file", STOCK_FILE = "operations", FILE_MAX = 150;
+
+function ouvrirFile() {
+  return new Promise((ok, ko) => {
+    if (!("indexedDB" in window)) { ko(new Error("indexedDB indisponible")); return; }
+    const r = indexedDB.open(BASE_FILE, 1);
+    r.onupgradeneeded = () => r.result.createObjectStore(STOCK_FILE, { keyPath: "id" });
+    r.onsuccess = () => ok(r.result);
+    r.onerror = () => ko(r.error);
+  });
+}
+async function transactionFile(mode, action) {
+  const base = await ouvrirFile();
+  return new Promise((ok, ko) => {
+    const tx = base.transaction(STOCK_FILE, mode);
+    let resultat;
+    const req = action(tx.objectStore(STOCK_FILE));
+    if (req) req.onsuccess = () => { resultat = req.result; };
+    tx.oncomplete = () => { base.close(); ok(resultat); };
+    tx.onerror = tx.onabort = () => { base.close(); ko(tx.error); };
+  });
+}
+const fileAjouter = (operation) => transactionFile("readwrite", (s) => s.put(operation));
+const fileSupprimer = (id) => transactionFile("readwrite", (s) => s.delete(id));
+async function fileDeLUtilisateur() {
+  const toutes = (await transactionFile("readonly", (s) => s.getAll())) || [];
+  return toutes.filter((o) => o.utilisateur === etat.profil.id).sort((a, b) => (a.dateHeure < b.dateHeure ? -1 : a.dateHeure > b.dateHeure ? 1 : 0));
+}
+async function rafraichirAttente() {
+  try { etat.attente = etat.profil ? (await fileDeLUtilisateur()).length : 0; } catch { etat.attente = 0; }
+}
+
+function nouvelId() {
+  if (self.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return `tel-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+}
+
+let synchroEnCours = false;
+async function synchroniser() {
+  if (synchroEnCours || !etat.jeton || !etat.profil) return;
+  synchroEnCours = true;
+  let envoyees = 0, refusees = 0, sessionPerdue = false;
+  try {
+    for (const o of await fileDeLUtilisateur()) {
+      const f = new FormData();
+      if (o.op === "reception" || o.op === "expedition") f.append("typeOperation", o.op);
+      if (o.image) f.append("image", o.image, "code.jpg");
+      if (o.serie) f.append("numeroSerie", o.serie);
+      if (o.latitude != null) { f.append("latitude", o.latitude); f.append("longitude", o.longitude); }
+      f.append("dateHeure", o.dateHeure);
+      f.append("identifiantClient", o.id);
+      try {
+        const donnees = await api(OPERATIONS[o.op].lien, { methode: "POST", formulaire: f, delai: 60000 });
+        majRecent(o.id, { issue: donnees.alerte ? "alerte" : "ok", serie: donnees.numeroSerie });
+        await fileSupprimer(o.id); envoyees++;
+      } catch (e) {
+        if (e.statut === 401) { sessionPerdue = true; break; }   // la file est gardée: elle repart à la prochaine connexion
+        if (e.statut === 0 || e.statut >= 500) break;            // réseau ou serveur indisponible: on réessaiera
+        // refus définitif: l'opération est retirée de la file et marquée « Refusée » dans les récents
+        const motif = o.op === "dispensation" && e.statut === 409 ? "Déjà désactivée" : texteScan(e).titre;
+        majRecent(o.id, { issue: "refus", motif });
+        await fileSupprimer(o.id); refusees++;
+      }
+    }
+  } finally { synchroEnCours = false; }
+  await rafraichirAttente();
+  if (envoyees || refusees) {
+    annoncer(refusees
+      ? `${envoyees} opération${envoyees > 1 ? "s" : ""} envoyée${envoyees > 1 ? "s" : ""}, ${refusees} refusée${refusees > 1 ? "s" : ""} (voir les récents).`
+      : `${envoyees} opération${envoyees > 1 ? "s" : ""} envoyée${envoyees > 1 ? "s" : ""}.`);
+  }
+  if (sessionPerdue) { fermerSession(); return; }
+  if ((location.hash || "#/") === "#/") rendre();
+}
+
+// Bandeau de l'accueil: hors connexion, ou opérations en attente d'envoi
+function bandeauReseau() {
+  const hors = navigator.onLine === false, n = etat.attente;
+  if (!hors && !n) return "";
+  const texteN = `${n} opération${n > 1 ? "s" : ""} en attente d'envoi`;
+  if (hors) {
+    return `<div class="bandeau-reseau" role="status"><span class="puce-reseau">${icone("horloge", 20)}</span>
+      <span><strong>Hors connexion</strong>${n ? `${texteN}. Elles partiront au retour du réseau.` : "Vos opérations seront gardées sur ce téléphone, puis envoyées au retour du réseau."}</span></div>`;
+  }
+  return `<div class="bandeau-reseau calme" role="status"><span class="puce-reseau">${icone("horloge", 20)}</span>
+    <span><strong>${texteN}</strong>Envoi automatique en cours ou à venir.</span>
+    <button type="button" data-action="synchroniser">Envoyer</button></div>`;
+}
+
 /* ------------------------------------------------------------------ API */
 
 class ErreurApi extends Error {
   constructor(statut, detail) { super(detail || `Erreur ${statut}`); this.statut = statut; this.detail = detail || ""; }
 }
 
-async function requete(chemin, { methode = "GET", corps, formulaire, json } = {}) {
+async function requete(chemin, { methode = "GET", corps, formulaire, json, delai } = {}) {
   const entetes = {};
   if (etat.jeton) entetes.Authorization = `Bearer ${etat.jeton}`;
   if (json !== undefined) entetes["Content-Type"] = "application/json";
   let reponse;
   try {
-    reponse = await fetch(chemin, { method: methode, headers: entetes, body: json !== undefined ? JSON.stringify(json) : formulaire || corps });
+    const controle = new AbortController();
+    const minuteur = delai ? setTimeout(() => controle.abort(), delai) : null;   // réseau trop lent: comme une coupure
+    try {
+      reponse = await fetch(chemin, { method: methode, headers: entetes, signal: controle.signal, body: json !== undefined ? JSON.stringify(json) : formulaire || corps });
+    } finally { if (minuteur) clearTimeout(minuteur); }
   } catch {
     throw new ErreurApi(0, "reseau");
   }
@@ -191,8 +298,9 @@ function texteConnexion(e) {
   return e.detail || "Connexion impossible.";
 }
 
-function texteScan(e) {
+function texteScan(e, op) {
   const d = e.detail;
+  if (e.statut === 0 && op === "statut") return { titre: "Vérification impossible hors connexion", texte: "La vérification interroge la base centrale. Réessayez quand le réseau sera revenu." };
   if (e.statut === 0) return { titre: "Serveur injoignable", texte: "Vérifiez votre connexion, puis réessayez." };
   if (/illisible/i.test(d)) return { titre: "Code illisible", texte: "Reprenez la photo en rapprochant le code, ou saisissez le numéro de série." };
   if (/inconnu|referencee/i.test(d)) return { titre: "Unité inconnue", texte: "Aucune unité sérialisée ne porte ce numéro. Vérifiez la provenance du produit." };
@@ -308,6 +416,7 @@ function vueConnexion(erreur = "") {
       etat.profil = profil;
       ecrire("session", { jeton, profil });
       aller("#/");
+      rafraichirAttente().then(() => { if (etat.attente) synchroniser(); });
     } catch (e) {
       etat.jeton = etat.profil = null;
       zone.innerHTML = blocErreur(texteConnexion(e));
@@ -407,6 +516,7 @@ function vueAccueil() {
           <h1>${echapper(p.structure_nom)}</h1>
           <span class="puce claire">${TYPES_STRUCTURE[p.structure_type] || p.structure_type}</span></div>` }, "clair")}
       <div class="accueil-corps">
+        ${ops.length ? bandeauReseau() : ""}
         ${ops.length ? `<div class="actions">${ligneAction(principale, true)}</div>
         ${autres.length ? `<div class="tuiles">${autres.map(tuileAction).join("")}</div>` : ""}` : ""}
         ${outils.length ? `<h2 class="section-titre">Gestion</h2><div class="groupe">${outils.map(ligneGestion).join("")}</div>` : ""}
@@ -421,6 +531,7 @@ function vueAccueil() {
   brancherBarre();
   racine.querySelectorAll("[data-op]").forEach((b) => b.addEventListener("click", () => aller(`#/scan/${b.dataset.op}`)));
   racine.querySelectorAll("[data-serie]").forEach((b) => b.addEventListener("click", () => verifierRecent(b.dataset.serie)));
+  racine.querySelector('[data-action="synchroniser"]')?.addEventListener("click", () => synchroniser());
 }
 
 // Chiffres du jour, calculés sur les opérations scannées depuis cet appareil
@@ -435,11 +546,11 @@ function bilanDuJour() {
 
 function ligneRecent(r) {
   const o = OPERATIONS[r.op];
-  const classe = r.issue === "ok" ? "ok" : r.issue === "alerte" ? "alerte" : "refus";
-  const mot = { ok: "Enregistrée", alerte: "À vérifier", refus: "Refusée" }[r.issue];
-  const symbole = icone({ ok: "coche", alerte: "attention", refus: "croix" }[r.issue], 20);
+  const classe = r.issue === "ok" ? "ok" : r.issue === "alerte" ? "alerte" : r.issue === "attente" ? "attente" : "refus";
+  const mot = { ok: "Enregistrée", alerte: "À vérifier", refus: "Refusée", attente: "En attente" }[r.issue];
+  const symbole = icone({ ok: "coche", alerte: "attention", refus: "croix", attente: "horloge" }[r.issue], 20);
   const interieur = `<span class="pastille ${classe}">${symbole}</span>
-    <span class="texte"><strong>${o.titre}</strong><small class="id">${echapper(r.serie)}</small></span>
+    <span class="texte"><strong>${o.titre}</strong><small class="id">${echapper(r.serie)}</small>${r.motif ? `<small class="motif">${echapper(r.motif)}</small>` : ""}</span>
     <span class="droite"><strong class="${classe}">${mot}</strong><time>${ilYA(r.date)}</time></span>`;
   // Une unité dont on connaît le numéro de série peut être revérifiée d'un appui
   return r.serie && r.serie !== "Code scanné"
@@ -460,7 +571,7 @@ async function verifierRecent(serie) {
     aller("#/resultat");
   } catch (e) {
     if (e.statut === 401) { fermerSession(); return; }
-    const { titre, texte } = texteScan(e);
+    const { titre, texte } = texteScan(e, "statut");
     annoncer(`${titre}. ${texte}`);
   } finally { chargement.remove(); }
 }
@@ -492,7 +603,10 @@ function vueCompte() {
   </main>${barre("compte")}`;
   brancherBarre();
   racine.querySelectorAll("[data-aller]").forEach((b) => b.addEventListener("click", () => aller(b.dataset.aller)));
-  racine.querySelector('[data-action="sortir"]').addEventListener("click", fermerSession);
+  racine.querySelector('[data-action="sortir"]').addEventListener("click", () => {
+    if (etat.attente && !confirm(`${etat.attente} opération${etat.attente > 1 ? "s" : ""} n'${etat.attente > 1 ? "ont" : "a"} pas encore été envoyée${etat.attente > 1 ? "s" : ""}. Elles restent sur ce téléphone et partiront à votre prochaine connexion. Se déconnecter ?`)) return;
+    fermerSession();
+  });
 }
 
 // Chaque utilisateur change son propre mot de passe
@@ -634,6 +748,7 @@ function vueScanner(op) {
         <button class="rond cache" id="lampe" data-action="lampe" aria-pressed="false" aria-label="Lampe torche">${icone("lampe")}</button>
       </div>
       <div id="position" class="position" role="status">Recherche de la position…</div>
+      <div id="reseau" class="position absente ${navigator.onLine === false && op !== "statut" ? "" : "cache"}" role="status">Hors connexion : envoi plus tard</div>
       <div class="visee"><div class="cadre">
         <svg viewBox="0 0 100 100" fill="none" preserveAspectRatio="none" aria-hidden="true">
           <path class="plein" d="M2.5 2.5v95h95"/>
@@ -672,7 +787,13 @@ function vueScanner(op) {
     } catch { /* refus ou pas de caméra: le repli reste affiché */ }
   })();
 
-  etat.nettoyage = () => { flux?.getTracks().forEach((t) => t.stop()); document.querySelectorAll(".feuille, .voile, .chargement").forEach((n) => n.remove()); };
+  const majReseau = () => document.getElementById("reseau")?.classList.toggle("cache", navigator.onLine !== false || op === "statut");
+  window.addEventListener("online", majReseau); window.addEventListener("offline", majReseau);
+  etat.nettoyage = () => {
+    flux?.getTracks().forEach((t) => t.stop());
+    window.removeEventListener("online", majReseau); window.removeEventListener("offline", majReseau);
+    document.querySelectorAll(".feuille, .voile, .chargement").forEach((n) => n.remove());
+  };
 
   async function envoyer({ fichier, serie }) {
     if (occupe) return;
@@ -682,19 +803,41 @@ function vueScanner(op) {
     chargement.innerHTML = `<div><div class="anneau"></div><strong>${fichier ? "Lecture du code…" : "Vérification…"}</strong></div>`;
     document.body.appendChild(chargement);
     const f = new FormData();
+    const envoye = fichier ? await reduireImage(fichier) : null;
+    const id = nouvelId(), dateHeure = new Date().toISOString(), lieu = position && op !== "statut" ? { ...position } : null;
     if (op === "reception" || op === "expedition") f.append("typeOperation", op);
-    if (fichier) { const envoye = await reduireImage(fichier); f.append("image", envoye, envoye.name || "code.jpg"); }
+    if (envoye) f.append("image", envoye, envoye.name || "code.jpg");
     if (serie) f.append("numeroSerie", serie);
-    if (position && op !== "statut") { f.append("latitude", position.latitude); f.append("longitude", position.longitude); }
+    if (lieu) { f.append("latitude", lieu.latitude); f.append("longitude", lieu.longitude); }
+    if (op !== "statut") { f.append("dateHeure", dateHeure); f.append("identifiantClient", id); }
     try {
-      const donnees = await api(o.lien, { methode: "POST", formulaire: f });
+      const donnees = await api(o.lien, { methode: "POST", formulaire: f, delai: op === "statut" ? undefined : 30000 });
       terminer(donnees);
     } catch (e) {
       if (e.statut === 401) { fermerSession(); return; }
       if (op === "dispensation" && e.statut === 409) { terminer(null, e, serie); return; }
+      if (e.statut === 0 && op !== "statut") {
+        // Pas de réseau: l'opération est gardée sur le téléphone et partira plus tard
+        if (await mettreEnAttente({ id, op, serie: serie || null, image: envoye, latitude: lieu ? lieu.latitude : null, longitude: lieu ? lieu.longitude : null, dateHeure })) return;
+      }
       chargement.remove(); occupe = false; vibrer([60, 60, 60]);
-      ouvrirErreur(texteScan(e));
+      ouvrirErreur(texteScan(e, op));
     }
+  }
+
+  async function mettreEnAttente(operation) {
+    try {
+      await rafraichirAttente();
+      if (etat.attente >= FILE_MAX) return false;
+      navigator.storage?.persist?.();
+      await fileAjouter({ ...operation, utilisateur: etat.profil.id });
+    } catch { return false; }   // stockage indisponible: l'erreur habituelle s'affiche
+    etat.attente += 1;
+    noterRecent({ id: operation.id, op, serie: operation.serie || "Code scanné", issue: "attente", date: operation.dateHeure });
+    etat.resultat = { op, attente: true, donnees: null, refus: null, serie: operation.serie || "", position: Boolean(operation.latitude != null), date: operation.dateHeure };
+    vibrer(60);
+    aller("#/resultat");
+    return true;
   }
 
   function terminer(donnees, refus, saisie) {
@@ -800,7 +943,10 @@ function vueResultat() {
   if (r.op === "statut") { vueStatut(r); return; }
   const o = OPERATIONS[r.op];
   let genre, titre, sous, serie = r.donnees ? r.donnees.numeroSerie : r.serie;
-  if (r.refus !== null && !r.donnees) {
+  if (r.attente) {
+    genre = "attente"; titre = "Enregistrée sur ce téléphone";
+    sous = "Pas de réseau. L'opération partira automatiquement dès que la connexion reviendra.";
+  } else if (r.refus !== null && !r.donnees) {
     genre = "refus"; titre = "Dispensation non validée";
     sous = "Cet identifiant est déjà désactivé. Une réutilisation est possible : une alerte est soumise à vérification.";
   } else if (r.donnees.alerte) {
@@ -814,19 +960,21 @@ function vueResultat() {
   } else {
     genre = "ok"; titre = o.succes; sous = "L'unité est enregistrée dans l'historique.";
   }
-  const symbole = genre === "ok" ? icone("coche", 46) : genre === "alerte" ? icone("attention", 46) : icone("croix", 46);
+  const symbole = genre === "ok" ? icone("coche", 46) : genre === "attente" ? icone("horloge", 46) : genre === "alerte" ? icone("attention", 46) : icone("croix", 46);
   const lignes = [];
   if (serie) lignes.push(ligne("Unité", echapper(serie), "serie"));
+  else if (r.attente) lignes.push(ligne("Unité", "Lue à l'envoi"));
   lignes.push(ligne("Opération", o.titre));
   lignes.push(ligne("Date", dateLongue(r.donnees ? r.donnees.dateHeure : r.date)));
   const avecPosition = r.donnees ? r.donnees.latitude != null : r.position;
   const plus = [ligne("Position", avecPosition ? "Enregistrée" : "Non transmise")];
+  if (r.attente) lignes.push(ligne("État", '<span class="etat gris">En attente d\'envoi</span>'));
   if (r.donnees && r.donnees.methodeLecture) plus.push(ligne("Lecture", LECTURES[r.donnees.methodeLecture] || echapper(r.donnees.methodeLecture)));
   racine.innerHTML = `<main class="resultat ${genre}">
     <div class="haut">${motif()}<div class="sceau" aria-hidden="true">${symbole}</div>
       <h1 role="status">${titre}</h1><p class="sous-titre">${sous}</p></div>
     <div class="corps"><dl class="fiche">${lignes.join("")}</dl>${plusHtml(plus)}
-    ${genre !== "ok" ? `<p class="avis">${AVIS}</p>` : ""}
+    ${genre === "attente" ? '<p class="avis">Les alertes éventuelles (identifiant déjà désactivé, rupture de séquence) ne seront connues qu\'après l\'envoi.</p>' : genre !== "ok" ? `<p class="avis">${AVIS}</p>` : ""}
     <div class="bas"><button class="bouton" data-action="encore">${icone("scan", 22)}Scanner une autre unité</button>
     <button class="bouton discret" data-action="fin">Terminer</button></div></div></main>`;
   racine.querySelector('[data-action="encore"]').addEventListener("click", () => aller(`#/scan/${r.op}`));
@@ -1343,6 +1491,13 @@ if (etat.jeton) {
     if (change && location.hash === "#/compte") rendre();
   }).catch((e) => { if (e.statut === 401) fermerSession(); /* hors connexion: on garde la session */ });
 }
+
+// Synchronisation des opérations faites sans réseau: au démarrage, au retour du réseau, quand l'application revient au premier plan, puis toutes les minutes tant qu'il en reste
+if (etat.jeton) rafraichirAttente().then(() => { if (etat.attente) synchroniser(); else if ((location.hash || "#/") === "#/") rendre(); });
+window.addEventListener("online", () => { synchroniser(); });
+window.addEventListener("offline", () => { if ((location.hash || "#/") === "#/" && etat.jeton) rendre(); });
+document.addEventListener("visibilitychange", () => { if (!document.hidden && etat.jeton && etat.attente) synchroniser(); });
+setInterval(() => { if (etat.jeton && etat.attente && navigator.onLine !== false) synchroniser(); }, 60000);
 
 // La coque de l'application reste disponible sans réseau (adresse sécurisée ou localhost seulement)
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {

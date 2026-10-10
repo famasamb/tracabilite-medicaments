@@ -68,3 +68,12 @@ def test_les_references_d_essai_permettent_l_inscription(client, db):
     from app.references import charger_references
     assert charger_references(db, "data/references_essai.csv") == 4
     assert charger_references(db, "data/references_essai.csv") == 0
+
+
+def test_le_mode_hors_ligne_envoie_la_date_et_un_identifiant_propre_a_chaque_operation(client):
+    js = client.get(ADRESSE + "app.js").text
+    for morceau in ("tracabilite-file", "indexedDB", 'f.append("dateHeure"', 'f.append("identifiantClient"',
+                    "synchroniser", 'addEventListener("online"'):
+        assert morceau in js, morceau
+    # la file d'attente garde l'operation, la photo du code et la position
+    assert "fileAjouter" in js and "fileSupprimer" in js
