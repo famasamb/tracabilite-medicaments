@@ -702,7 +702,7 @@ strong { font-weight: 650; }
 .bouton:active { background: var(--nuit); }
 .bouton.discret { background: var(--surface); color: var(--marine); border: 1px solid #b9cdc3; box-shadow: none; }
 .bouton.discret:active { background: var(--ciel); }
-.champ .saisie { border: 1px solid #c9d6ce; border-radius: 16px 16px 16px 5px; }
+.champ .saisie { border: 1px solid #c9d6ce; border-radius: 16px; }
 .champ .saisie:focus-within { border-color: var(--marine); box-shadow: 0 0 0 4px rgba(11, 74, 59, .13); }
 .champ > span, .libelle-groupe { font-weight: 650; }
 .message-erreur { border-radius: var(--r-petit); }
