@@ -1586,7 +1586,7 @@ function vueOuverture() {
           genre: d.alerte ? "alerte" : "ok",
           titre: d.alerte ? `${palette ? "Palette" : "Carton"} ouvert, à vérifier` : `${palette ? "Palette" : "Carton"} ouvert`,
           sous: d.alerte ? `${manque} ${unite}${manque > 1 ? "s" : ""} manquant${e}${manque > 1 ? "s" : ""}. ${d.nombreAlertes} alerte${d.nombreAlertes > 1 ? "s" : ""} à faire vérifier.`
-            : `${d.elementsLiberes} ${unite}${d.elementsLiberes > 1 ? `s sont libéré${e}s` : ` est libéré${e}`}. ${d.elementsLiberes > 1 ? "Ils se scannent" : "Il se scanne"} maintenant ${palette ? "seuls" : "un par un"}.`,
+            : `${d.elementsLiberes} ${unite}${d.elementsLiberes > 1 ? `s sont libéré${e}s` : ` est libéré${e}`}. ${palette ? (d.elementsLiberes > 1 ? "Ils se scannent" : "Il se scanne") : (d.elementsLiberes > 1 ? "Elles se scannent" : "Elle se scanne")} maintenant ${palette ? "seuls" : "une par une"}.`,
           lignes: [[palette ? "Palette" : "Carton", echapper(c.sscc), "serie"], ["Éléments libérés", String(d.elementsLiberes)], ["Manquants", String(manque)]],
           extra: d.alerte ? `<p class="avis">${AVIS}</p>` : "",
           boutons: [
