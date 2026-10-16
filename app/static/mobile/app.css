@@ -978,3 +978,26 @@ strong { font-weight: 650; }
 .bandeau-reseau.calme { background: #e3ebe8; }
 .bandeau-reseau.calme .puce-reseau { color: #3d5f57; }
 .bandeau-reseau button { margin-left: auto; flex: none; min-height: 40px; padding: 0 16px; border: 0; border-radius: 12px; background: #0f6b57; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+
+
+/* ---------- Agrégation: carton ou palette ---------- */
+.cible { position: relative; z-index: 2; align-self: center; display: inline-flex; margin: 0 16px 8px; padding: 4px; gap: 4px;
+  border-radius: 999px; background: rgba(255, 255, 255, .14); border: 1px solid rgba(255, 255, 255, .16);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.cible button { padding: 8px 16px; border: 0; border-radius: 999px; background: transparent; color: #d4f5ed; font-weight: 650; font-size: 14px; }
+.cible button[aria-pressed="true"] { background: #ffffff; color: var(--marine); }
+.collecte { position: relative; z-index: 2; align-self: flex-start; margin: 8px 16px 0; padding: 6px 6px 6px 14px; display: inline-flex; align-items: center; gap: 10px;
+  border-radius: 999px; font-size: 14px; font-weight: 650; background: rgba(143, 224, 195, .22); border: 1px solid rgba(143, 224, 195, .5);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.collecte button { padding: 7px 14px; border: 0; border-radius: 999px; background: #ffffff; color: var(--marine); font-weight: 700; font-size: 14px; }
+.collecte.cache, .cible.cache { display: none; }
+.rang.element { padding: 10px 8px 10px 16px; }
+.rang.element .serie { font-family: var(--police-id); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.retirer { flex: none; width: 40px; height: 40px; border-radius: 50%; border: 0; background: transparent; color: var(--vermillon); display: grid; place-items: center; }
+.retirer:active { background: var(--vermillon-fond); }
+.actions-page { display: grid; gap: 10px; margin-top: 18px; }
+.liste-cases { max-height: 52vh; overflow: auto; }
+.case { display: flex; align-items: center; gap: 14px; padding: 13px 16px; min-height: 48px; }
+.case + .case { border-top: 1px solid var(--trait); }
+.case input { width: 22px; height: 22px; accent-color: var(--ok); flex: none; }
+.case .serie { font-family: var(--police-id); font-variant-numeric: tabular-nums; font-weight: 600; overflow-wrap: anywhere; }

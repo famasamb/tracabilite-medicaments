@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
 from .auth import utilisateur_courant
+from .contenant import conteneur_actif_de_la_boite
 from .lecture import lire_hybride
 from .db import get_db
 from .horsligne import date_de_l_operation, evenement_deja_enregistre, verifier_identifiant_client
@@ -42,6 +43,46 @@ def _expediee_par_une_autre_structure(db: Session, numero_serie: str, structure_
         Evenement.numeroSerie == numero_serie,
         Evenement.typeOperation == TypeOperation.expedition,
         Utilisateur.structure_id != structure_id).first() is not None
+
+
+MESSAGE_BOITE_HORS_CARTON = ("Enregistre avec une alerte: cette boite est encore dans un carton non ouvert, "
+                            "ouvrez le carton d'abord, a verifier.")
+
+
+def creer_evenement(db: Session, utilisateur: Utilisateur, unite: Unite, type_operation: TypeOperation,
+                    latitude: float | None, longitude: float | None, date_heure: datetime | None,
+                    identifiant_client: str | None, par_conteneur: bool = False) -> tuple[Evenement, TypeAnomalie | None, str]:
+    """Ajoute a la session l'evenement d'une unite et, si besoin, son alerte (sans valider la transaction).
+
+    Les regles sont celles de la fiche 7: unite deja desactivee (variante 3b), ou reception d'une unite
+    qu'aucune autre structure n'a expediee (rupture de sequence). L'evenement est toujours garde.
+    Une boite scannee seule alors que son carton n'est pas ouvert leve aussi une alerte (agregation), sauf
+    quand l'evenement vient du scan du carton lui-meme (par_conteneur).
+    Renvoie l'evenement, le type d'anomalie (ou None) et le message."""
+    evenement = Evenement(typeOperation=type_operation, latitude=latitude, longitude=longitude,
+                          numeroSerie=unite.numeroSerie, utilisateur_id=utilisateur.id,
+                          dateHeure=date_de_l_operation(date_heure), identifiantClient=identifiant_client)
+    db.add(evenement)
+    type_anomalie = None
+    if unite.statut == StatutUnite.desactivee:
+        type_anomalie = TypeAnomalie.reutilisationIdentifiant
+        message = "Enregistre avec une alerte: identifiant deja desactive, a verifier."
+    elif (type_operation == TypeOperation.reception
+          and not _expediee_par_une_autre_structure(db, unite.numeroSerie, utilisateur.structure_id)):
+        type_anomalie = TypeAnomalie.ruptureSequence
+        message = "Enregistre avec une alerte: aucune expedition de cette unite dans l'historique, a verifier."
+    else:
+        message = "Evenement enregistre."
+    if type_anomalie is not None:
+        db.add(Anomalie(typeAnomalie=type_anomalie, score=1.0, evenement=evenement))
+    if not par_conteneur:
+        carton = conteneur_actif_de_la_boite(db, unite.numeroSerie)
+        if carton is not None:
+            db.add(Anomalie(typeAnomalie=TypeAnomalie.boiteHorsCarton, score=1.0, evenement=evenement))
+            if type_anomalie is None:
+                type_anomalie = TypeAnomalie.boiteHorsCarton
+                message = MESSAGE_BOITE_HORS_CARTON
+    return evenement, type_anomalie, message
 
 
 async def obtenir_unite(db: Session, image: UploadFile | None, numero_serie: str | None) -> Unite:
@@ -86,6 +127,8 @@ def sortie_d_un_evenement_existant(evenement: Evenement) -> EvenementSortie:
         message = "Dispensation enregistree." if evenement.typeOperation == TypeOperation.dispensation else "Evenement enregistre."
     elif anomalie.typeAnomalie == TypeAnomalie.reutilisationIdentifiant:
         message = "Enregistre avec une alerte: identifiant deja desactive, a verifier."
+    elif anomalie.typeAnomalie == TypeAnomalie.boiteHorsCarton:
+        message = MESSAGE_BOITE_HORS_CARTON
     elif evenement.typeOperation == TypeOperation.dispensation:
         message = ("Dispensation enregistree avec une alerte: aucune reception par cette officine "
                    "dans l'historique, a verifier.")
@@ -128,28 +171,10 @@ async def enregistrer_evenement(
     # Etapes 1 a 3: lecture du code (ou saisie manuelle), puis verification dans la base centrale
     unite = await obtenir_unite(db, image, numeroSerie)
 
-    # Etapes 4 et 5: construction et enregistrement de l'evenement
-    evenement = Evenement(typeOperation=typeOperation, latitude=latitude, longitude=longitude,
-                          numeroSerie=unite.numeroSerie, utilisateur_id=utilisateur.id,
-                          dateHeure=date_de_l_operation(dateHeure), identifiantClient=identifiantClient)
-    db.add(evenement)
-
-    # Variante 3b: unite deja desactivee, l'evenement est enregistre avec une alerte a verifier
-    type_anomalie = None
-    if unite.statut == StatutUnite.desactivee:
-        type_anomalie = TypeAnomalie.reutilisationIdentifiant
-        message = "Enregistre avec une alerte: identifiant deja desactive, a verifier."
-    # Rupture de sequence a la reception: aucune expedition de cette unite par une autre structure dans
-    # l'historique. Comme pour la dispensation (fiche 8, variante 3c), l'evenement est garde avec une alerte.
-    elif (typeOperation == TypeOperation.reception
-          and not _expediee_par_une_autre_structure(db, unite.numeroSerie, utilisateur.structure_id)):
-        type_anomalie = TypeAnomalie.ruptureSequence
-        message = "Enregistre avec une alerte: aucune expedition de cette unite dans l'historique, a verifier."
-    else:
-        message = "Evenement enregistre."
+    # Etapes 4 et 5: construction et enregistrement de l'evenement (avec l'alerte eventuelle)
+    evenement, type_anomalie, message = creer_evenement(
+        db, utilisateur, unite, typeOperation, latitude, longitude, dateHeure, identifiantClient)
     alerte = type_anomalie is not None
-    if alerte:
-        db.add(Anomalie(typeAnomalie=type_anomalie, score=1.0, evenement=evenement))
     db.commit()
     db.refresh(evenement)
 

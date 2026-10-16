@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, Upl
 from sqlalchemy.orm import Session
 
 from .auth import utilisateur_courant
+from .contenant import conteneur_actif_de_la_boite
 from .db import get_db
 from .horsligne import date_de_l_operation, evenement_deja_enregistre, verifier_identifiant_client
 from .models import (Anomalie, Evenement, StatutUnite, TypeAnomalie, TypeOperation,
@@ -72,16 +73,27 @@ async def enregistrer_dispensation(
     if alerte:
         db.add(Anomalie(typeAnomalie=TypeAnomalie.ruptureSequence, score=1.0, evenement=evenement))
 
+    # Agregation: la boite est encore dans un carton non ouvert (on aurait du ouvrir le carton d'abord)
+    hors_carton = conteneur_actif_de_la_boite(db, unite.numeroSerie) is not None
+    if hors_carton:
+        db.add(Anomalie(typeAnomalie=TypeAnomalie.boiteHorsCarton, score=1.0, evenement=evenement))
+
     # Etapes 5 et 6: enregistrement et desactivation definitive de l'identifiant
     unite.statut = StatutUnite.desactivee
     db.commit()
     db.refresh(evenement)
 
-    message = ("Dispensation enregistree avec une alerte: aucune reception par cette officine "
-               "dans l'historique, a verifier." if alerte else "Dispensation enregistree.")
+    if alerte:
+        message = ("Dispensation enregistree avec une alerte: aucune reception par cette officine "
+                   "dans l'historique, a verifier.")
+    elif hors_carton:
+        message = ("Dispensation enregistree avec une alerte: cette boite est encore dans un carton non ouvert, "
+                   "ouvrez le carton d'abord, a verifier.")
+    else:
+        message = "Dispensation enregistree."
     return EvenementSortie(id=evenement.id, numeroSerie=evenement.numeroSerie,
                            typeOperation=evenement.typeOperation, dateHeure=evenement.dateHeure,
                            latitude=evenement.latitude, longitude=evenement.longitude,
-                           alerte=alerte, message=message,
-                           typeAnomalie="ruptureSequence" if alerte else None,
+                           alerte=alerte or hors_carton, message=message,
+                           typeAnomalie="ruptureSequence" if alerte else ("boiteHorsCarton" if hors_carton else None),
                            methodeLecture=getattr(unite, "methode_lecture", None))

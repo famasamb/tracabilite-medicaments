@@ -77,3 +77,20 @@ def test_le_mode_hors_ligne_envoie_la_date_et_un_identifiant_propre_a_chaque_ope
         assert morceau in js, morceau
     # la file d'attente garde l'operation, la photo du code et la position
     assert "fileAjouter" in js and "fileSupprimer" in js
+
+
+def test_les_ecrans_de_l_agregation_sont_dans_l_application(client):
+    js = client.get(ADRESSE + "app.js").text
+    for morceau in ("vueComposition", "vueConteneur", "vueOuverture", "/conteneurs/evenements", "/conteneurs/lecture",
+                    "composer_carton", "composer_palette", "boiteHorsCarton", "cartonIncomplet", "Carton ou palette"):
+        assert morceau in js, morceau
+    # la file d'attente hors ligne sait envoyer un carton: elle garde le SSCC et le chemin propre aux cartons
+    assert 'f.append(o.conteneur ? "sscc" : "numeroSerie"' in js
+    css = client.get(ADRESSE + "app.css").text
+    for classe in (".cible", ".collecte", ".case"):
+        assert classe in css, classe
+
+
+def test_le_service_worker_change_de_version_pour_recharger_les_nouveaux_ecrans(client):
+    sw = client.get(ADRESSE + "sw.js").text
+    assert 'const VERSION = "v18"' in sw

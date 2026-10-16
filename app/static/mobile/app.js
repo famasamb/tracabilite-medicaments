@@ -16,10 +16,10 @@ const TYPES_STRUCTURE = {
 
 // Mêmes droits que l'API (OPERATIONS_AUTORISEES). L'API reste la référence: elle refuse le reste.
 const AUTORISEES = {
-  fabricant: ["expedition", "statut"],
-  grossisteRepartiteur: ["reception", "expedition", "statut"],
-  SR: ["reception", "expedition", "statut"],
-  officine: ["reception", "dispensation", "statut"],
+  fabricant: ["expedition", "statut", "conteneur"],
+  grossisteRepartiteur: ["reception", "expedition", "statut", "conteneur"],
+  SR: ["reception", "expedition", "statut", "conteneur"],
+  officine: ["reception", "dispensation", "statut", "conteneur"],
 };
 const PRINCIPALE = { fabricant: "expedition", grossisteRepartiteur: "reception", SR: "reception", officine: "dispensation" };
 
@@ -43,6 +43,19 @@ const OPERATIONS = {
     titre: "Vérifier une unité", icone: "verifier", resume: "Statut et dernier mouvement d'une unité",
     lien: "/unites/statut", consigne: "Cadrez le code DataMatrix de l'unité à vérifier",
   },
+  conteneur: {
+    titre: "Carton ou palette", icone: "colis", resume: "Voir le contenu, ouvrir un carton",
+    lien: "/conteneurs/lecture", consigne: "Cadrez l'étiquette du carton ou de la palette",
+  },
+  // Réservées au fabricant: on scanne les éléments un par un, puis on crée le carton ou la palette
+  composer_carton: {
+    titre: "Composer un carton", icone: "colis", collecte: "boite",
+    consigne: "Cadrez le code d'une boîte du carton",
+  },
+  composer_palette: {
+    titre: "Composer une palette", icone: "colis", collecte: "conteneur",
+    consigne: "Cadrez l'étiquette d'un carton de la palette",
+  },
 };
 
 const ANOMALIES = {
@@ -50,6 +63,8 @@ const ANOMALIES = {
   ruptureSequence: "Rupture de séquence",
   trajetInhabituel: "Trajet inhabituel",
   concentrationInhabituelle: "Concentration inhabituelle",
+  boiteHorsCarton: "Boîte hors carton",
+  cartonIncomplet: "Carton incomplet",
 };
 const LECTURES = { classique: "Lecture classique", deep_learning: "Retrouvé par l'IA (YOLOv8)", saisie: "Saisie manuelle" };
 const AVIS = "Une alerte est un signal à faire vérifier par une personne, pas une fraude confirmée.";
@@ -96,6 +111,7 @@ const ICONES = {
   plus: (t) => trait('<path d="M12 5v14M5 12h14"/>', t),
   telecharger: (t) => trait('<path d="M12 4v11m0 0-4-4m4 4 4-4"/><path d="M5 19h14"/>', t),
   loupe: (t) => trait('<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>', t),
+  colis: (t) => trait('<path d="M3.5 8 12 4l8.5 4v8.5L12 20.5l-8.5-4V8Z"/><path d="m3.5 8 8.5 4 8.5-4M12 12v8.5M7.8 6l8.4 4"/>', t),
   scan: (t) => trait('<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/>', t),
 };
 const icone = (nom, taille = 24) => ICONES[nom](taille);
@@ -211,13 +227,14 @@ async function synchroniser() {
       const f = new FormData();
       if (o.op === "reception" || o.op === "expedition") f.append("typeOperation", o.op);
       if (o.image) f.append("image", o.image, "code.jpg");
-      if (o.serie) f.append("numeroSerie", o.serie);
+      if (o.serie) f.append(o.conteneur ? "sscc" : "numeroSerie", o.serie);
       if (o.latitude != null) { f.append("latitude", o.latitude); f.append("longitude", o.longitude); }
       f.append("dateHeure", o.dateHeure);
       f.append("identifiantClient", o.id);
       try {
-        const donnees = await api(OPERATIONS[o.op].lien, { methode: "POST", formulaire: f, delai: 60000 });
-        majRecent(o.id, { issue: donnees.alerte ? "alerte" : "ok", serie: donnees.numeroSerie });
+        const lienOp = o.conteneur ? "/conteneurs/evenements" : OPERATIONS[o.op].lien;
+        const donnees = await api(lienOp, { methode: "POST", formulaire: f, delai: 60000 });
+        majRecent(o.id, { issue: donnees.alerte ? "alerte" : "ok", serie: donnees.numeroSerie || donnees.sscc });
         await fileSupprimer(o.id); envoyees++;
       } catch (e) {
         if (e.statut === 401) { sessionPerdue = true; break; }   // la file est gardée: elle repart à la prochaine connexion
@@ -302,6 +319,11 @@ function texteScan(e, op) {
   const d = e.detail;
   if (e.statut === 0 && op === "statut") return { titre: "Vérification impossible hors connexion", texte: "La vérification interroge la base centrale. Réessayez quand le réseau sera revenu." };
   if (e.statut === 0) return { titre: "Serveur injoignable", texte: "Vérifiez votre connexion, puis réessayez." };
+  if (/conteneur inconnu|aucun carton/i.test(d || "")) return { titre: "Carton inconnu", texte: "Aucun carton ni palette ne porte ce numéro (SSCC). Vérifiez l'étiquette." };
+  if (/a ete ouvert|deja ouvert/i.test(d || "")) return { titre: "Carton déjà ouvert", texte: "Ce carton a été ouvert : scannez ses boîtes une par une." };
+  if (/pas chez vous/i.test(d || "")) return { titre: "Ce carton n'est pas chez vous", texte: "Seule la structure qui détient le carton peut l'ouvrir." };
+  if (/sur une palette/i.test(d || "")) return { titre: "Carton sur une palette", texte: "Ouvrez d'abord la palette." };
+  if (/ce conteneur est vide/i.test(d || "")) return { titre: "Conteneur vide", texte: "Il ne contient plus aucune boîte." };
   if (/illisible/i.test(d)) return { titre: "Code illisible", texte: "Reprenez la photo en rapprochant le code, ou saisissez le numéro de série." };
   if (/inconnu|referencee/i.test(d)) return { titre: "Unité inconnue", texte: "Aucune unité sérialisée ne porte ce numéro. Vérifiez la provenance du produit." };
   if (/volumineuse/i.test(d)) return { titre: "Image trop volumineuse", texte: "La photo dépasse 5 Mo. Reprenez-la." };
@@ -344,6 +366,13 @@ function rendre() {
   const p = etat.profil, type = p.structure_type;
   const m = hash.match(/^#\/scan\/(\w+)$/);
   if (m && OPERATIONS[m[1]] && operationsScan().includes(m[1])) { vueScanner(m[1]); return; }
+  if (m && type === "fabricant" && (m[1] === "composer_carton" || m[1] === "composer_palette")) {
+    const niveau = m[1] === "composer_palette" ? "palette" : "carton";
+    if (!etat.collecte || etat.collecte.niveau !== niveau) etat.collecte = { niveau, elements: [] };
+    vueScanner(m[1]); return;
+  }
+  if (hash === "#/composition" && type === "fabricant" && etat.collecte) { vueComposition(); return; }
+  if (hash === "#/ouverture" && etat.resultat && etat.resultat.op === "conteneur") { vueOuverture(); return; }
   if (hash === "#/resultat" && etat.resultat) { vueResultat(); return; }
   if (hash === "#/compte") { vueCompte(); return; }
   if (hash === "#/compte/mot-de-passe") { vueMotDePasse(); return; }
@@ -475,6 +504,8 @@ function gestion() {
   if (p.structure_type === "fabricant") {
     liste.push({ vers: "#/produits", icone: "produit", titre: "Produits", resume: "Rechercher ou enregistrer un produit" });
     liste.push({ vers: "#/lot", icone: "grille", titre: "Sérialiser un lot", resume: "Générer les codes à imprimer" });
+    liste.push({ vers: "#/scan/composer_carton", icone: "colis", titre: "Composer un carton", resume: "Regrouper des boîtes, imprimer l'étiquette" });
+    liste.push({ vers: "#/scan/composer_palette", icone: "colis", titre: "Composer une palette", resume: "Regrouper des cartons sur une palette" });
   }
   if (p.role === "responsable") {
     liste.push({ vers: "#/equipe", icone: "employe", titre: "Ajouter un employé", resume: "Créer un compte pour votre équipe" });
@@ -505,6 +536,7 @@ function heros(haut, corps, classe = "") {
 }
 
 function vueAccueil() {
+  etat.derniereCible = null;
   const p = etat.profil, ops = operationsScan(), principale = PRINCIPALE[p.structure_type];
   const liste = ops.length ? recents().slice(0, 5) : [], outils = gestion();
   const autres = ops.filter((o) => o !== principale);
@@ -530,7 +562,7 @@ function vueAccueil() {
     </main>${barre("accueil")}`;
   brancherBarre();
   racine.querySelectorAll("[data-op]").forEach((b) => b.addEventListener("click", () => aller(`#/scan/${b.dataset.op}`)));
-  racine.querySelectorAll("[data-serie]").forEach((b) => b.addEventListener("click", () => verifierRecent(b.dataset.serie)));
+  racine.querySelectorAll("[data-serie]").forEach((b) => b.addEventListener("click", () => verifierRecent(b.dataset.serie, b.dataset.conteneur === "1")));
   racine.querySelector('[data-action="synchroniser"]')?.addEventListener("click", () => synchroniser());
 }
 
@@ -550,24 +582,24 @@ function ligneRecent(r) {
   const mot = { ok: "Enregistrée", alerte: "À vérifier", refus: "Refusée", attente: "En attente" }[r.issue];
   const symbole = icone({ ok: "coche", alerte: "attention", refus: "croix", attente: "horloge" }[r.issue], 20);
   const interieur = `<span class="pastille ${classe}">${symbole}</span>
-    <span class="texte"><strong>${o.titre}</strong><small class="id">${echapper(r.serie)}</small>${r.motif ? `<small class="motif">${echapper(r.motif)}</small>` : ""}</span>
+    <span class="texte"><strong>${o.titre}${r.conteneur ? " · carton" : ""}</strong><small class="id">${echapper(r.serie)}</small>${r.motif ? `<small class="motif">${echapper(r.motif)}</small>` : ""}</span>
     <span class="droite"><strong class="${classe}">${mot}</strong><time>${ilYA(r.date)}</time></span>`;
   // Une unité dont on connaît le numéro de série peut être revérifiée d'un appui
   return r.serie && r.serie !== "Code scanné"
-    ? `<button class="recent" data-serie="${echapper(r.serie)}" aria-label="Voir le statut de l'unité ${echapper(r.serie)}">${interieur}<span class="fleche">${icone("fleche", 18)}</span></button>`
+    ? `<button class="recent" data-serie="${echapper(r.serie)}" ${r.conteneur ? 'data-conteneur="1"' : ""} aria-label="Voir ${r.conteneur ? "le contenu du carton" : "le statut de l'unité"} ${echapper(r.serie)}">${interieur}<span class="fleche">${icone("fleche", 18)}</span></button>`
     : `<div class="recent">${interieur}</div>`;
 }
 
 // Revérifier une unité déjà scannée sur cet appareil, sans rescanner
-async function verifierRecent(serie) {
+async function verifierRecent(serie, conteneur = false) {
   const chargement = document.createElement("div");
   chargement.className = "chargement"; chargement.setAttribute("role", "status");
   chargement.innerHTML = '<div><div class="anneau"></div><strong>Vérification…</strong></div>';
   document.body.appendChild(chargement);
   try {
-    const f = new FormData(); f.append("numeroSerie", serie);
-    const donnees = await api("/unites/statut", { methode: "POST", formulaire: f });
-    etat.resultat = { op: "statut", donnees, date: new Date().toISOString() };
+    const f = new FormData(); f.append(conteneur ? "sscc" : "numeroSerie", serie);
+    const donnees = await api(conteneur ? "/conteneurs/lecture" : "/unites/statut", { methode: "POST", formulaire: f });
+    etat.resultat = { op: conteneur ? "conteneur" : "statut", donnees, date: new Date().toISOString() };
     aller("#/resultat");
   } catch (e) {
     if (e.statut === 401) { fermerSession(); return; }
@@ -737,6 +769,19 @@ function vueReinitialiser(jeton) {
 function vueScanner(op) {
   const o = OPERATIONS[op];
   let flux = null, position = null, occupe = false, lampe = false;
+  // Boîte ou carton: la réception et l'expédition se font aussi d'un seul scan sur un carton ou une palette
+  const peutBasculer = op === "reception" || op === "expedition";
+  let cible = op === "conteneur" || o.collecte === "conteneur" || (peutBasculer && etat.derniereCible === "conteneur") ? "conteneur" : "boite";
+  const collecte = o.collecte || null;
+  const lecturePure = op === "statut" || op === "conteneur" || Boolean(collecte);   // rien n'est enregistré par ce scan
+  const consigneActuelle = () => (peutBasculer && cible === "conteneur" ? "Cadrez l'étiquette du carton ou de la palette" : o.consigne);
+  const lienActuel = () => {
+    if (collecte === "boite") return "/unites/statut";
+    if (collecte === "conteneur" || op === "conteneur") return "/conteneurs/lecture";
+    if (cible === "conteneur") return "/conteneurs/evenements";
+    return o.lien;
+  };
+  const nCollecte = () => (etat.collecte ? etat.collecte.elements.length : 0);
 
   racine.innerHTML = `
     <section class="scanner" aria-label="${o.titre}">
@@ -747,13 +792,18 @@ function vueScanner(op) {
         <h1>${o.titre}</h1>
         <button class="rond cache" id="lampe" data-action="lampe" aria-pressed="false" aria-label="Lampe torche">${icone("lampe")}</button>
       </div>
+      ${peutBasculer ? `<div class="cible" role="group" aria-label="Ce que vous scannez">
+        <button type="button" data-cible="boite" aria-pressed="${cible === "boite"}">Boîte</button>
+        <button type="button" data-cible="conteneur" aria-pressed="${cible === "conteneur"}">Carton ou palette</button></div>` : ""}
       <div id="position" class="position" role="status">Recherche de la position…</div>
-      <div id="reseau" class="position absente ${navigator.onLine === false && op !== "statut" ? "" : "cache"}" role="status">Hors connexion : envoi plus tard</div>
+      <div id="reseau" class="position absente ${navigator.onLine === false && !lecturePure ? "" : "cache"}" role="status">Hors connexion : envoi plus tard</div>
+      ${collecte ? `<div id="collecte" class="collecte ${nCollecte() ? "" : "cache"}" role="status"><span id="collecte-n"></span>
+        <button type="button" data-action="finir">Terminer</button></div>` : ""}
       <div class="visee"><div class="cadre">
         <svg viewBox="0 0 100 100" fill="none" preserveAspectRatio="none" aria-hidden="true">
           <path class="plein" d="M2.5 2.5v95h95"/>
           <path class="pointille" d="M2.5 2.5h95"/><path class="pointille" d="M97.5 2.5v95"/>
-        </svg><div class="consigne">${o.consigne}</div></div></div>
+        </svg><div class="consigne" id="consigne">${consigneActuelle()}</div></div></div>
       <div class="scanner-bas">
         <button class="cote" data-action="galerie">${icone("galerie", 26)}Photo</button>
         <button class="declencheur" data-action="capturer" aria-label="Photographier le code"><span></span></button>
@@ -766,12 +816,12 @@ function vueScanner(op) {
 
   // Position GPS: facultative, l'API accepte un événement sans position
   const zonePosition = document.getElementById("position");
-  if ("geolocation" in navigator && op !== "statut") {
+  if ("geolocation" in navigator && !lecturePure) {
     navigator.geolocation.getCurrentPosition(
       (p) => { position = { latitude: p.coords.latitude, longitude: p.coords.longitude }; zonePosition.textContent = "Position prête"; zonePosition.className = "position prete"; },
       () => { zonePosition.textContent = "Position indisponible"; zonePosition.className = "position absente"; },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 });
-  } else if (op === "statut") {
+  } else if (lecturePure) {
     zonePosition.classList.add("cache");
   } else { zonePosition.textContent = "Position indisponible"; zonePosition.className = "position absente"; }
 
@@ -787,7 +837,14 @@ function vueScanner(op) {
     } catch { /* refus ou pas de caméra: le repli reste affiché */ }
   })();
 
-  const majReseau = () => document.getElementById("reseau")?.classList.toggle("cache", navigator.onLine !== false || op === "statut");
+  const majReseau = () => document.getElementById("reseau")?.classList.toggle("cache", navigator.onLine !== false || lecturePure);
+  const majCollecte = () => {
+    const zone = document.getElementById("collecte"); if (!zone) return;
+    const n = nCollecte();
+    zone.classList.toggle("cache", n === 0);
+    document.getElementById("collecte-n").textContent = `${n} ${collecte === "conteneur" ? "carton" : "boîte"}${n > 1 ? "s" : ""} ajouté${collecte === "conteneur" ? "" : "e"}${n > 1 ? "s" : ""}`;
+  };
+  majCollecte();
   window.addEventListener("online", majReseau); window.addEventListener("offline", majReseau);
   etat.nettoyage = () => {
     flux?.getTracks().forEach((t) => t.stop());
@@ -804,25 +861,38 @@ function vueScanner(op) {
     document.body.appendChild(chargement);
     const f = new FormData();
     const envoye = fichier ? await reduireImage(fichier) : null;
-    const id = nouvelId(), dateHeure = new Date().toISOString(), lieu = position && op !== "statut" ? { ...position } : null;
+    const id = nouvelId(), dateHeure = new Date().toISOString(), lieu = position && !lecturePure ? { ...position } : null;
+    const surConteneur = cible === "conteneur";
     if (op === "reception" || op === "expedition") f.append("typeOperation", op);
     if (envoye) f.append("image", envoye, envoye.name || "code.jpg");
-    if (serie) f.append("numeroSerie", serie);
+    if (serie) f.append(surConteneur ? "sscc" : "numeroSerie", serie);
     if (lieu) { f.append("latitude", lieu.latitude); f.append("longitude", lieu.longitude); }
-    if (op !== "statut") { f.append("dateHeure", dateHeure); f.append("identifiantClient", id); }
+    if (!lecturePure) { f.append("dateHeure", dateHeure); f.append("identifiantClient", id); }
     try {
-      const donnees = await api(o.lien, { methode: "POST", formulaire: f, delai: op === "statut" ? undefined : 30000 });
+      const donnees = await api(lienActuel(), { methode: "POST", formulaire: f, delai: lecturePure ? undefined : 30000 });
+      if (collecte) { ajouterALaCollecte(donnees, chargement); return; }
       terminer(donnees);
     } catch (e) {
       if (e.statut === 401) { fermerSession(); return; }
       if (op === "dispensation" && e.statut === 409) { terminer(null, e, serie); return; }
-      if (e.statut === 0 && op !== "statut") {
+      if (e.statut === 0 && !lecturePure) {
         // Pas de réseau: l'opération est gardée sur le téléphone et partira plus tard
-        if (await mettreEnAttente({ id, op, serie: serie || null, image: envoye, latitude: lieu ? lieu.latitude : null, longitude: lieu ? lieu.longitude : null, dateHeure })) return;
+        if (await mettreEnAttente({ id, op, serie: serie || null, image: envoye, conteneur: surConteneur, latitude: lieu ? lieu.latitude : null, longitude: lieu ? lieu.longitude : null, dateHeure })) return;
       }
       chargement.remove(); occupe = false; vibrer([60, 60, 60]);
-      ouvrirErreur(texteScan(e, op));
+      ouvrirErreur(texteScan(e, lecturePure ? "statut" : op));
     }
+  }
+
+  // Composition d'un carton ou d'une palette: chaque scan ajoute un élément à la liste, sans rien enregistrer
+  function ajouterALaCollecte(d, chargement) {
+    chargement.remove(); occupe = false;
+    const cle = collecte === "boite" ? d.numeroSerie : d.sscc;
+    if (collecte === "boite" && d.statut !== "active") { vibrer([60, 60, 60]); ouvrirErreur({ titre: "Boîte déjà désactivée", texte: "Cette boîte a déjà été remise à un patient : elle ne peut pas entrer dans un carton." }); return; }
+    if (collecte === "conteneur" && (d.niveau !== "carton" || d.etat !== "actif")) { vibrer([60, 60, 60]); ouvrirErreur({ titre: "Ce n'est pas un carton fermé", texte: "Seuls les cartons fermés peuvent être posés sur une palette." }); return; }
+    if (etat.collecte.elements.includes(cle)) { vibrer([60, 60, 60]); annoncer("Déjà ajouté à la liste."); return; }
+    etat.collecte.elements.push(cle); vibrer(40); majCollecte();
+    annoncer(`${collecte === "boite" ? "Boîte" : "Carton"} ajouté${collecte === "boite" ? "e" : ""} (${nCollecte()}).`);
   }
 
   async function mettreEnAttente(operation) {
@@ -833,18 +903,18 @@ function vueScanner(op) {
       await fileAjouter({ ...operation, utilisateur: etat.profil.id });
     } catch { return false; }   // stockage indisponible: l'erreur habituelle s'affiche
     etat.attente += 1;
-    noterRecent({ id: operation.id, op, serie: operation.serie || "Code scanné", issue: "attente", date: operation.dateHeure });
-    etat.resultat = { op, attente: true, donnees: null, refus: null, serie: operation.serie || "", position: Boolean(operation.latitude != null), date: operation.dateHeure };
+    noterRecent({ id: operation.id, op, serie: operation.serie || "Code scanné", conteneur: Boolean(operation.conteneur), issue: "attente", date: operation.dateHeure });
+    etat.resultat = { op, attente: true, conteneur: Boolean(operation.conteneur), donnees: null, refus: null, serie: operation.serie || "", position: Boolean(operation.latitude != null), date: operation.dateHeure };
     vibrer(60);
     aller("#/resultat");
     return true;
   }
 
   function terminer(donnees, refus, saisie) {
-    const resultat = { op, donnees, refus: refus ? refus.detail : null, serie: saisie || "", position: Boolean(position), date: new Date().toISOString() };
-    if (op !== "statut") {
-      const serie = donnees ? donnees.numeroSerie : saisie;
-      noterRecent({ op, serie: serie || "Code scanné", issue: refus ? "refus" : donnees.alerte ? "alerte" : "ok", date: resultat.date });
+    const resultat = { op, donnees, conteneur: !lecturePure && cible === "conteneur", refus: refus ? refus.detail : null, serie: saisie || "", position: Boolean(position), date: new Date().toISOString() };
+    if (!lecturePure) {
+      const serie = donnees ? (donnees.numeroSerie || donnees.sscc) : saisie;
+      noterRecent({ op, serie: serie || "Code scanné", conteneur: resultat.conteneur, issue: refus ? "refus" : donnees.alerte ? "alerte" : "ok", date: resultat.date });
     }
     etat.resultat = resultat;
     vibrer(refus || (donnees && donnees.alerte) ? [80, 60, 80] : 60);
@@ -865,11 +935,12 @@ function vueScanner(op) {
   }
 
   function ouvrirSaisie() {
+    const saisieConteneur = cible === "conteneur";
     const f = document.createElement("div");
     f.innerHTML = `<div class="voile"></div><form class="feuille" aria-label="Saisie du numéro de série" novalidate>
-      <div class="poignee"></div><h2>Numéro de série</h2><p class="aide">Le numéro de série est écrit sous le code, après <strong>(21)</strong>. Recopiez ce qui suit, sans les parenthèses.</p>
-      <label class="champ"><span class="visuel-seulement">Numéro de série</span><div class="saisie"><input name="serie" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" required></div></label>
-      <div class="actions-bas" style="display:grid;gap:10px"><button class="bouton" type="submit">${op === "statut" ? "Vérifier" : "Valider"}</button>
+      <div class="poignee"></div><h2>${saisieConteneur ? "Numéro du carton (SSCC)" : "Numéro de série"}</h2><p class="aide">${saisieConteneur ? "Le SSCC est le numéro de 18 chiffres écrit sous l'étiquette, après <strong>(00)</strong>. Recopiez ce qui suit, sans les parenthèses." : "Le numéro de série est écrit sous le code, après <strong>(21)</strong>. Recopiez ce qui suit, sans les parenthèses."}</p>
+      <label class="champ"><span class="visuel-seulement">${saisieConteneur ? "SSCC" : "Numéro de série"}</span><div class="saisie"><input name="serie" autocomplete="off" ${saisieConteneur ? 'inputmode="numeric" maxlength="18"' : 'autocapitalize="characters" inputmode="text"'} spellcheck="false" required></div></label>
+      <div class="actions-bas" style="display:grid;gap:10px"><button class="bouton" type="submit">${lecturePure && !collecte ? "Vérifier" : collecte ? "Ajouter" : "Valider"}</button>
       <button class="bouton discret" type="button" data-action="annuler">Annuler</button></div></form>`;
     document.body.appendChild(f);
     const form = f.querySelector("form");
@@ -886,6 +957,12 @@ function vueScanner(op) {
 
   racine.querySelector('[data-action="retour"]').addEventListener("click", () => aller("#/"));
   racine.querySelector('[data-action="saisie"]').addEventListener("click", ouvrirSaisie);
+  racine.querySelector('[data-action="finir"]')?.addEventListener("click", () => aller("#/composition"));
+  racine.querySelectorAll("[data-cible]").forEach((b) => b.addEventListener("click", () => {
+    cible = b.dataset.cible; etat.derniereCible = cible;
+    racine.querySelectorAll("[data-cible]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    document.getElementById("consigne").textContent = consigneActuelle();
+  }));
   racine.querySelector('[data-action="galerie"]').addEventListener("click", () => {
     const champ = document.getElementById("fichier");
     champ.removeAttribute("capture"); champ.click();
@@ -941,18 +1018,31 @@ const plusHtml = (lignes, titre = "Détails de l'enregistrement") => lignes.leng
 function vueResultat() {
   const r = etat.resultat;
   if (r.op === "statut") { vueStatut(r); return; }
+  if (r.op === "conteneur") { vueConteneur(r); return; }
   const o = OPERATIONS[r.op];
-  let genre, titre, sous, serie = r.donnees ? r.donnees.numeroSerie : r.serie;
+  const cont = r.donnees && r.donnees.sscc ? r.donnees : null;   // résultat d'un scan de carton ou de palette
+  const motCarton = cont && cont.niveau === "palette" ? "palette" : "carton";
+  let genre, titre, sous, serie = r.donnees ? (r.donnees.numeroSerie || r.donnees.sscc) : r.serie;
   if (r.attente) {
     genre = "attente"; titre = "Enregistrée sur ce téléphone";
     sous = "Pas de réseau. L'opération partira automatiquement dès que la connexion reviendra.";
   } else if (r.refus !== null && !r.donnees) {
     genre = "refus"; titre = "Dispensation non validée";
     sous = "Cet identifiant est déjà désactivé. Une réutilisation est possible : une alerte est soumise à vérification.";
+  } else if (cont && cont.alerte) {
+    genre = "alerte"; titre = o.alerte;
+    const a = cont.nombreAlertes, n = cont.nombreBoites;
+    sous = `${a} alerte${a > 1 ? "s" : ""} sur ${n} boîte${n > 1 ? "s" : ""} de cette ${motCarton}. Aucune expédition dans l'historique, ou identifiant déjà désactivé : à faire vérifier.`;
+  } else if (cont) {
+    genre = "ok"; titre = o.succes;
+    const n = cont.nombreBoites;
+    sous = `${n} boîte${n > 1 ? "s sont enregistrées" : " est enregistrée"} d'un seul scan.`;
   } else if (r.donnees.alerte) {
     genre = "alerte"; titre = o.alerte;
     const rupture = r.donnees.typeAnomalie === "ruptureSequence" || (!r.donnees.typeAnomalie && r.op === "dispensation");
-    sous = !rupture
+    sous = r.donnees.typeAnomalie === "boiteHorsCarton"
+      ? "Cette boîte est encore dans un carton non ouvert. Ouvrez le carton d'abord. L'événement est gardé avec une alerte à vérifier."
+      : !rupture
       ? "Cet identifiant était déjà désactivé. L'événement est gardé avec une alerte à vérifier."
       : r.op === "dispensation"
         ? "Aucune réception par cette officine dans l'historique de l'unité. À faire vérifier."
@@ -962,8 +1052,10 @@ function vueResultat() {
   }
   const symbole = genre === "ok" ? icone("coche", 46) : genre === "attente" ? icone("horloge", 46) : genre === "alerte" ? icone("attention", 46) : icone("croix", 46);
   const lignes = [];
-  if (serie) lignes.push(ligne("Unité", echapper(serie), "serie"));
-  else if (r.attente) lignes.push(ligne("Unité", "Lue à l'envoi"));
+  const motUnite = r.conteneur ? (cont ? (motCarton === "palette" ? "Palette" : "Carton") : "Carton") : "Unité";
+  if (serie) lignes.push(ligne(motUnite, echapper(serie), "serie"));
+  else if (r.attente) lignes.push(ligne(motUnite, "Lu à l'envoi"));
+  if (cont) { lignes.push(ligne("Boîtes", String(cont.nombreBoites))); lignes.push(ligne("Alertes", String(cont.nombreAlertes))); }
   lignes.push(ligne("Opération", o.titre));
   lignes.push(ligne("Date", dateLongue(r.donnees ? r.donnees.dateHeure : r.date)));
   const avecPosition = r.donnees ? r.donnees.latitude != null : r.position;
@@ -975,9 +1067,9 @@ function vueResultat() {
       <h1 role="status">${titre}</h1><p class="sous-titre">${sous}</p></div>
     <div class="corps"><dl class="fiche">${lignes.join("")}</dl>${plusHtml(plus)}
     ${genre === "attente" ? '<p class="avis">Les alertes éventuelles (identifiant déjà désactivé, rupture de séquence) ne seront connues qu\'après l\'envoi.</p>' : genre !== "ok" ? `<p class="avis">${AVIS}</p>` : ""}
-    <div class="bas"><button class="bouton" data-action="encore">${icone("scan", 22)}Scanner une autre unité</button>
+    <div class="bas"><button class="bouton" data-action="encore">${icone("scan", 22)}${r.conteneur ? "Scanner un autre carton" : "Scanner une autre unité"}</button>
     <button class="bouton discret" data-action="fin">Terminer</button></div></div></main>`;
-  racine.querySelector('[data-action="encore"]').addEventListener("click", () => aller(`#/scan/${r.op}`));
+  racine.querySelector('[data-action="encore"]').addEventListener("click", () => { etat.derniereCible = r.conteneur ? "conteneur" : "boite"; aller(`#/scan/${r.op}`); });
   racine.querySelector('[data-action="fin"]').addEventListener("click", () => aller("#/"));
 }
 
@@ -1098,6 +1190,7 @@ const champCourriel = (valeur = "", aide = "Sert à récupérer le mot de passe 
   champ("email", "Adresse e-mail", { type: "email", valeur, inputmode: "email", autocomplete: "email", autocapitalize: "none", spellcheck: "false", maxlength: 254, aide });
 
 function texteGestion(e) {
+  if (e.texteDirect) return e.texteDirect;   // texte déjà écrit par l'écran qui a lancé l'action
   const d = e.detail || "";
   if (e.statut === 0) return "Le serveur est injoignable. Vérifiez votre connexion et réessayez.";
   if (/adresse e-mail/i.test(d)) return /identifiant|reference/i.test(d) ? "Cette référence, cet identifiant ou cette adresse e-mail est déjà utilisé." : "Cette adresse e-mail est déjà utilisée.";
@@ -1139,9 +1232,9 @@ async function soumettre(form, libelleOccupe, action) {
 const zoneErreur = '<div data-zone-erreur role="alert"></div>';
 
 // Écran de confirmation, dans le même style que le résultat d'un scan
-function afficherSucces({ titre, sous, lignes = [], extra = "", boutons = [] }) {
-  racine.innerHTML = `<main class="resultat ok">
-    <div class="haut"><div class="sceau" aria-hidden="true">${icone("coche", 46)}</div>
+function afficherSucces({ titre, sous, lignes = [], extra = "", boutons = [], genre = "ok" }) {
+  racine.innerHTML = `<main class="resultat ${genre}">
+    <div class="haut"><div class="sceau" aria-hidden="true">${icone(genre === "alerte" ? "attention" : "coche", 46)}</div>
       <h1 role="status">${titre}</h1><p class="sous-titre">${sous}</p></div>
     <div class="corps">${lignes.length ? `<dl class="fiche">${lignes.map(([l, v, c]) => ligne(l, v, c || "")).join("")}</dl>` : ""}
     ${extra}
@@ -1418,6 +1511,150 @@ function vueLot() {
         });
       } finally { chargement.remove(); }
     });
+  });
+}
+
+
+/* ---------- Agrégation: carton ou palette ---------- */
+
+const motConteneur = (c) => (c.niveau === "palette" ? "palette" : "carton");
+
+// Vue d'un carton ou d'une palette lu par scan (contenu, état, détenteur), avec l'ouverture si on le détient
+function vueConteneur(r) {
+  const c = r.donnees, palette = c.niveau === "palette", ouvert = c.etat !== "actif";
+  const lignes = [
+    ligne(palette ? "Palette" : "Carton", echapper(c.sscc), "serie"),
+    ligne("État", ouvert ? '<span class="etat gris">Ouvert</span>' : '<span class="etat vert">Fermé</span>'),
+    ligne("Détenu par", echapper(c.structure)),
+    ligne("Boîtes", ouvert ? "Libérées" : String(c.nombreBoites)),
+  ];
+  const contenu = c.elements.map((e) => ligne(palette ? "Carton" : "Boîte", echapper(e), "serie"));
+  const peutOuvrir = !ouvert && c.chezVous;
+  const note = ouvert ? "Ce conteneur est ouvert : ses éléments se scannent un par un."
+    : !c.chezVous ? "Seule la structure qui détient ce conteneur peut l'ouvrir." : "";
+  racine.innerHTML = `<main class="resultat ok">
+    <div class="haut">${motif()}<div class="sceau" aria-hidden="true">${icone("colis", 46)}</div>
+      <h1 role="status">${palette ? "Palette" : "Carton"} ${ouvert ? "ouvert" : "fermé"}</h1>
+      <p class="sous-titre">${ouvert ? "Son contenu a été libéré." : `${c.nombreBoites} boîte${c.nombreBoites > 1 ? "s" : ""} à l'intérieur.`}</p></div>
+    <div class="corps"><dl class="fiche">${lignes.join("")}</dl>
+    ${contenu.length ? plusHtml(contenu, `Contenu (${contenu.length})`) : ""}
+    ${note ? `<p class="avis">${note}</p>` : ""}
+    <div class="bas">${peutOuvrir ? `<button class="bouton" data-action="ouvrir">${icone("colis", 22)}Ouvrir ${palette ? "cette palette" : "ce carton"}</button>` : ""}
+    <button class="bouton ${peutOuvrir ? "discret" : ""}" data-action="encore">${icone("scan", 22)}Scanner un autre carton</button>
+    <button class="bouton discret" data-action="fin">Terminer</button></div></div></main>`;
+  racine.querySelector('[data-action="ouvrir"]')?.addEventListener("click", () => aller("#/ouverture"));
+  racine.querySelector('[data-action="encore"]').addEventListener("click", () => aller("#/scan/conteneur"));
+  racine.querySelector('[data-action="fin"]').addEventListener("click", () => aller("#/"));
+}
+
+function texteOuverture(e) {
+  const d = e.detail || "";
+  if (e.statut === 0) return "Serveur injoignable. Vérifiez votre connexion, puis réessayez.";
+  if (/pas chez vous/i.test(d)) return "Ce carton n'est pas chez vous. Seule la structure qui le détient peut l'ouvrir.";
+  if (/deja ouvert/i.test(d)) return "Ce conteneur est déjà ouvert.";
+  if (/sur une palette/i.test(d)) return "Ce carton est sur une palette : ouvrez d'abord la palette.";
+  if (/pas dans ce conteneur/i.test(d)) return "Un des éléments cochés n'est pas dans ce conteneur.";
+  return d && d !== "validation" ? d : "Ouverture impossible. Réessayez.";
+}
+
+// Ouverture: on décoche ce qui manque, tout ce qui reste coché est considéré présent
+function vueOuverture() {
+  const c = etat.resultat.donnees, palette = c.niveau === "palette", unite = palette ? "carton" : "boîte", e = palette ? "" : "e";
+  sousPage(palette ? "Ouvrir la palette" : "Ouvrir le carton", `
+    <p class="encart" style="margin-top:0">Décochez ce qui manque. Tout ce qui est coché est considéré comme présent. Une fois ouvert, ${palette ? "la palette" : "le carton"} ne se referme pas.</p>
+    <form id="formulaire" novalidate>${zoneErreur}
+      <div class="groupe liste-cases">${c.elements.map((e) => `<label class="case"><input type="checkbox" name="el" value="${echapper(e)}" checked><span class="serie">${echapper(e)}</span></label>`).join("")}</div>
+      <p class="mention" id="decompte" role="status"></p>
+      <button class="bouton" type="submit">${icone("colis", 22)}Ouvrir ${palette ? "la palette" : "le carton"}</button>
+    </form>`, "#/resultat");
+  const form = document.getElementById("formulaire");
+  const maj = () => {
+    const n = form.querySelectorAll('input[name="el"]:checked').length, total = c.elements.length;
+    document.getElementById("decompte").textContent = n === total ? `Tout est là : ${total} ${unite}${total > 1 ? "s" : ""}.`
+      : `${n} sur ${total} présent${e}${n > 1 ? "s" : ""}. ${total - n} manquant${e}${total - n > 1 ? "s" : ""} ${total - n > 1 ? "seront signalés" : "sera signalé"} par une alerte.`;
+  };
+  form.addEventListener("change", maj); maj();
+  form.addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    const presentes = [...form.querySelectorAll('input[name="el"]:checked')].map((i) => i.value);
+    soumettre(form, "Ouverture…", async () => {
+      try {
+        const d = await api(`/conteneurs/${c.sscc}/ouvrir`, { methode: "POST", json: { presentes } });
+        const manque = d.manquants.length;
+        etat.resultat = null;
+        afficherSucces({
+          genre: d.alerte ? "alerte" : "ok",
+          titre: d.alerte ? `${palette ? "Palette" : "Carton"} ouvert, à vérifier` : `${palette ? "Palette" : "Carton"} ouvert`,
+          sous: d.alerte ? `${manque} ${unite}${manque > 1 ? "s" : ""} manquant${e}${manque > 1 ? "s" : ""}. ${d.nombreAlertes} alerte${d.nombreAlertes > 1 ? "s" : ""} à faire vérifier.`
+            : `${d.elementsLiberes} ${unite}${d.elementsLiberes > 1 ? `s sont libéré${e}s` : ` est libéré${e}`}. ${d.elementsLiberes > 1 ? "Ils se scannent" : "Il se scanne"} maintenant ${palette ? "seuls" : "un par un"}.`,
+          lignes: [[palette ? "Palette" : "Carton", echapper(c.sscc), "serie"], ["Éléments libérés", String(d.elementsLiberes)], ["Manquants", String(manque)]],
+          extra: d.alerte ? `<p class="avis">${AVIS}</p>` : "",
+          boutons: [
+            { texte: "Scanner un autre carton", icone: "scan", clic: () => aller("#/scan/conteneur") },
+            { texte: "Terminer", discret: true, clic: () => aller("#/") },
+          ],
+        });
+      } catch (e) { e.texteDirect = texteOuverture(e); throw e; }
+    });
+  });
+}
+
+function texteComposition(e) {
+  const d = e.detail || "";
+  if (e.statut === 0) return "Serveur injoignable. Vérifiez votre connexion, puis réessayez.";
+  if (/deja dans un carton/i.test(d)) return "Une de ces boîtes est déjà dans un carton.";
+  if (/deja sur une palette/i.test(d)) return "Un de ces cartons est déjà sur une palette.";
+  if (/entree dans le circuit|entre dans le circuit/i.test(d)) return "Un de ces éléments est déjà entré dans le circuit : il ne peut plus changer de carton.";
+  if (/desactivee/i.test(d)) return "Une de ces boîtes est déjà désactivée.";
+  if (/pas ete serialisee|n'appartient pas/i.test(d)) return "Un de ces éléments n'appartient pas à votre structure.";
+  if (/a ete ouvert/i.test(d)) return "Un de ces cartons a déjà été ouvert.";
+  if (/inconnu/i.test(d)) return "Un de ces éléments est inconnu.";
+  if (e.statut === 422) return "Ajoutez au moins un élément (500 au maximum).";
+  return "Création impossible. Réessayez.";
+}
+
+// Liste des éléments scannés, puis création du carton ou de la palette et de son étiquette
+function vueComposition() {
+  const c = etat.collecte, palette = c.niveau === "palette", n = c.elements.length;
+  const unite = palette ? "carton" : "boîte", nom = palette ? "palette" : "carton";
+  sousPage(palette ? "Composer une palette" : "Composer un carton", `
+    <p class="encart" style="margin-top:0">${n ? `${n} ${unite}${n > 1 ? "s" : ""} dans ${palette ? "la palette" : "le carton"}.` : `Aucun ${unite} pour l'instant. Scannez-en au moins un.`}</p>
+    ${n ? `<div class="groupe" style="margin-top:14px">${c.elements.map((e, i) => `<div class="rang element"><span class="texte"><strong class="serie">${echapper(e)}</strong></span>
+      <button type="button" class="retirer" data-retirer="${i}" aria-label="Retirer ${echapper(e)}">${icone("croix", 18)}</button></div>`).join("")}</div>` : ""}
+    <div data-zone-erreur role="alert" style="margin-top:14px"></div>
+    <div class="actions-page">
+      <button class="bouton" data-action="creer" ${n ? "" : "disabled"}>${icone("colis", 22)}Créer ${palette ? "la palette" : "le carton"}</button>
+      <button class="bouton discret" data-action="ajouter">${icone("scan", 22)}Ajouter ${palette ? "un carton" : "une boîte"}</button>
+      ${n ? '<button class="bouton discret" data-action="vider">Tout retirer</button>' : ""}
+    </div>`, `#/scan/composer_${nom}`);
+  racine.querySelectorAll("[data-retirer]").forEach((b) => b.addEventListener("click", () => { c.elements.splice(Number(b.dataset.retirer), 1); vueComposition(); }));
+  racine.querySelector('[data-action="ajouter"]').addEventListener("click", () => aller(`#/scan/composer_${nom}`));
+  racine.querySelector('[data-action="vider"]')?.addEventListener("click", () => { c.elements.length = 0; vueComposition(); });
+  racine.querySelector('[data-action="creer"]').addEventListener("click", async (ev) => {
+    const bouton = ev.currentTarget, zone = racine.querySelector("[data-zone-erreur]"), texte = bouton.innerHTML;
+    bouton.disabled = true; bouton.textContent = "Création…"; zone.innerHTML = "";
+    try {
+      const d = await api("/conteneurs", { methode: "POST", json: { niveau: c.niveau, elements: c.elements } });
+      let image = "", lien = "";
+      try { const png = await (await requete(`/conteneurs/${d.sscc}/etiquette`)).blob(); lien = URL.createObjectURL(png); image = lien; } catch { /* l'étiquette se retélécharge plus tard */ }
+      etat.collecte = null;
+      afficherSucces({
+        titre: palette ? "Palette créée" : "Carton créé",
+        sous: `${palette ? "La palette" : "Le carton"} contient ${d.nombreBoites} boîte${d.nombreBoites > 1 ? "s" : ""}. Imprimez l'étiquette et collez-la dessus.`,
+        lignes: [[palette ? "Palette" : "Carton", echapper(d.sscc), "serie"], [palette ? "Cartons" : "Boîtes", String(d.elements.length)], ["Boîtes au total", String(d.nombreBoites)], ["Détenu par", echapper(d.structure)]],
+        extra: image ? `<figure class="apercu-code"><img src="${image}" alt="Étiquette ${palette ? "de la palette" : "du carton"}"><figcaption>Étiquette à imprimer<br><span class="serie">${echapper(d.sscc)}</span></figcaption></figure>` : "",
+        boutons: [
+          ...(lien ? [{ texte: "Télécharger l'étiquette (PNG)", icone: "telecharger", href: lien, telecharger: `etiquette_${d.sscc}.png` }] : []),
+          { texte: palette ? "Composer une autre palette" : "Composer un autre carton", discret: true, clic: () => aller(`#/scan/composer_${nom}`) },
+          { texte: "Terminer", discret: true, clic: () => aller("#/") },
+        ],
+      });
+    } catch (e) {
+      if (e.statut === 401) { fermerSession(); return; }
+      zone.innerHTML = blocErreur(texteComposition(e));
+      zone.scrollIntoView({ block: "center", behavior: "smooth" });
+      bouton.disabled = false; bouton.innerHTML = texte;
+    }
   });
 }
 

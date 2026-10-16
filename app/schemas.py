@@ -5,7 +5,8 @@ from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, Field
 
-from .models import Role, StatutUnite, TypeAnomalie, TypeOperation, TypeStructure
+from .models import (EtatConteneur, NiveauConteneur, Role, StatutUnite, TypeAnomalie, TypeOperation,
+                     TypeStructure)
 
 
 _FORME_COURRIEL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]{2,}$")
@@ -208,3 +209,53 @@ class TableauDeBordSortie(BaseModel):
     anomaliesParType: dict[str, int]
     pointsCarte: list[PointCarte]
     alertesRecentes: list[AlerteRecente]
+
+
+class ConteneurEntree(BaseModel):
+    niveau: NiveauConteneur
+    elements: list[str] = Field(min_length=1, max_length=500,
+                                description="Carton: numeros de serie des boites. Palette: SSCC des cartons.")
+
+
+class ConteneurSortie(BaseModel):
+    sscc: str
+    niveau: NiveauConteneur
+    etat: EtatConteneur
+    structure: str
+    dateCreation: datetime
+    elements: list[str]          # ce qui est directement dedans (boites ou cartons)
+    nombreBoites: int            # toutes les boites contenues
+    chezVous: bool = False       # vrai si la structure de l'utilisateur detient ce conteneur
+    message: str
+    methodeLecture: str | None = None   # classique, deep_learning ou saisie (route de lecture)
+
+
+class ConteneurEvenementSortie(BaseModel):
+    sscc: str
+    niveau: NiveauConteneur
+    typeOperation: TypeOperation
+    dateHeure: datetime
+    latitude: float | None = None
+    longitude: float | None = None
+    nombreBoites: int
+    nombreAlertes: int
+    alerte: bool
+    message: str
+    methodeLecture: str | None = None   # classique, deep_learning ou saisie
+
+
+class OuvertureEntree(BaseModel):
+    presentes: list[str] | None = Field(
+        default=None, max_length=500,
+        description="Ce qui a ete trouve a l'ouverture (numeros de serie, ou SSCC pour une palette). "
+                    "Sans liste, tout est considere present.")
+
+
+class OuvertureSortie(BaseModel):
+    sscc: str
+    niveau: NiveauConteneur
+    elementsLiberes: int
+    manquants: list[str]
+    nombreAlertes: int
+    alerte: bool
+    message: str

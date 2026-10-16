@@ -1,7 +1,8 @@
 import enum
 import uuid
 from datetime import date, datetime, timezone
-from sqlalchemy import String, Integer, Float, Boolean, Date, DateTime, Enum, ForeignKey, Index, UniqueConstraint, text
+from sqlalchemy import (String, Integer, Float, Boolean, Date, DateTime, Enum, ForeignKey, Index, UniqueConstraint,
+                        CheckConstraint, text)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .db import Base
 
@@ -47,6 +48,19 @@ class TypeAnomalie(str, enum.Enum):
     ruptureSequence = "ruptureSequence"
     trajetInhabituel = "trajetInhabituel"
     concentrationInhabituelle = "concentrationInhabituelle"
+    # Agregation: une boite scannee seule alors que son carton n'est pas ouvert, et un carton ouvert incomplet
+    boiteHorsCarton = "boiteHorsCarton"
+    cartonIncomplet = "cartonIncomplet"
+
+
+class NiveauConteneur(str, enum.Enum):
+    carton = "carton"
+    palette = "palette"
+
+
+class EtatConteneur(str, enum.Enum):
+    actif = "actif"
+    desagrege = "desagrege"
 
 
 # ---------- Classes ----------
@@ -220,3 +234,49 @@ class ReferenceAutorisation(Base):
     reference: Mapped[str] = mapped_column(String(100), primary_key=True)
     nom: Mapped[str] = mapped_column(String(200))
     type: Mapped[TypeStructure] = mapped_column(Enum(TypeStructure))
+
+
+class Conteneur(Base):
+    """Un carton ou une palette (agregation). Son identifiant est un SSCC de 18 chiffres (GS1)."""
+    __tablename__ = "conteneurs"
+
+    sscc: Mapped[str] = mapped_column(String(18), primary_key=True)
+    niveau: Mapped[NiveauConteneur] = mapped_column(Enum(NiveauConteneur))
+    etat: Mapped[EtatConteneur] = mapped_column(Enum(EtatConteneur), default=EtatConteneur.actif)
+    dateCreation: Mapped[datetime] = mapped_column(DateTime, default=maintenant)
+
+    # Structure qui detient le conteneur (le fabricant a la creation)
+    structure_id: Mapped[str] = mapped_column(ForeignKey("structures.id"), index=True)
+    structure: Mapped[Structure] = relationship()
+
+    contenu: Mapped[list["Contenu"]] = relationship(
+        back_populates="parent", foreign_keys="Contenu.parent_sscc", order_by="Contenu.dateAjout")
+
+
+class Contenu(Base):
+    """Lien parent/enfant: un carton contient des boites, une palette contient des cartons.
+
+    La date de retrait garde l'historique: apres l'ouverture d'un carton on sait quelle boite y a ete."""
+    __tablename__ = "contenus"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    parent_sscc: Mapped[str] = mapped_column(ForeignKey("conteneurs.sscc"), index=True)
+    parent: Mapped[Conteneur] = relationship(back_populates="contenu", foreign_keys=[parent_sscc])
+
+    # Un seul des deux enfants est renseigne: une boite (unite) ou un carton (conteneur)
+    enfant_unite: Mapped[str | None] = mapped_column(ForeignKey("unites.numeroSerie"), nullable=True, index=True)
+    enfant_conteneur: Mapped[str | None] = mapped_column(ForeignKey("conteneurs.sscc"), nullable=True, index=True)
+
+    dateAjout: Mapped[datetime] = mapped_column(DateTime, default=maintenant)
+    dateRetrait: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    __table_args__ = (
+        CheckConstraint("(enfant_unite IS NULL) <> (enfant_conteneur IS NULL)", name="ck_contenu_un_seul_enfant"),
+        # Une boite (ou un carton) n'est que dans un seul parent a la fois
+        Index("uq_unite_dans_un_seul_carton", "enfant_unite", unique=True,
+              sqlite_where=text("enfant_unite IS NOT NULL AND \"dateRetrait\" IS NULL"),
+              postgresql_where=text("enfant_unite IS NOT NULL AND \"dateRetrait\" IS NULL")),
+        Index("uq_carton_sur_une_seule_palette", "enfant_conteneur", unique=True,
+              sqlite_where=text("enfant_conteneur IS NOT NULL AND \"dateRetrait\" IS NULL"),
+              postgresql_where=text("enfant_conteneur IS NOT NULL AND \"dateRetrait\" IS NULL")),
+    )

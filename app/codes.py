@@ -72,6 +72,12 @@ def _ajouter_texte(image: np.ndarray, lignes: list[str]) -> np.ndarray:
     while echelle > 0.4 and max(cv2.getTextSize(t, police, echelle, epaisseur)[0][0] for t in lignes) > largeur - 24:
         echelle -= 0.05
     hauteur_ligne = int(cv2.getTextSize("Ag", police, echelle, epaisseur)[0][1] * 1.9)
+    # Si le texte est encore plus large que le code, on elargit l'image (bords blancs) plutot que de le couper
+    besoin = max(cv2.getTextSize(t, police, echelle, epaisseur)[0][0] for t in lignes) + 24
+    if besoin > largeur:
+        gauche = (besoin - largeur) // 2
+        image = cv2.copyMakeBorder(image, 0, 0, gauche, besoin - largeur - gauche, cv2.BORDER_CONSTANT, value=255)
+        largeur = besoin
     marge = np.full((hauteur_ligne * len(lignes) + 16, largeur), 255, dtype=np.uint8)
     for i, texte in enumerate(lignes):
         cv2.putText(marge, texte, (12, 8 + hauteur_ligne * (i + 1) - hauteur_ligne // 4), police, echelle, 0, epaisseur, cv2.LINE_AA)

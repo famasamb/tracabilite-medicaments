@@ -243,7 +243,6 @@ jeu_de_donnees/modeles/**
 !jeu_de_donnees/modeles/datamatrix/weights/best.pt
 !jeu_de_donnees/modeles/datamatrix/results.csv
 
-preparer_essai_telephone.py
 essai_telephone.db
 images_essai
 tracabilite_sauvegarde.db
