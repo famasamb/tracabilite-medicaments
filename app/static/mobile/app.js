@@ -1536,7 +1536,7 @@ function vueConteneur(r) {
     : !c.chezVous ? "Seule la structure qui détient ce conteneur peut l'ouvrir." : "";
   racine.innerHTML = `<main class="resultat ok">
     <div class="haut">${motif()}<div class="sceau" aria-hidden="true">${icone("colis", 46)}</div>
-      <h1 role="status">${palette ? "Palette" : "Carton"} ${ouvert ? "ouvert" : "fermé"}</h1>
+      <h1 role="status">${palette ? "Palette" : "Carton"} ${ouvert ? "ouvert" : "fermé"}${palette ? "e" : ""}</h1>
       <p class="sous-titre">${ouvert ? "Son contenu a été libéré." : `${c.nombreBoites} boîte${c.nombreBoites > 1 ? "s" : ""} à l'intérieur.`}</p></div>
     <div class="corps"><dl class="fiche">${lignes.join("")}</dl>
     ${contenu.length ? plusHtml(contenu, `Contenu (${contenu.length})`) : ""}
@@ -1586,7 +1586,7 @@ function vueOuverture() {
         etat.resultat = null;
         afficherSucces({
           genre: d.alerte ? "alerte" : "ok",
-          titre: d.alerte ? `${palette ? "Palette" : "Carton"} ouvert, à vérifier` : `${palette ? "Palette" : "Carton"} ouvert`,
+          titre: d.alerte ? `${palette ? "Palette ouverte" : "Carton ouvert"}, à vérifier` : (palette ? "Palette ouverte" : "Carton ouvert"),
           sous: d.alerte ? `${manque} ${unite}${manque > 1 ? "s" : ""} manquant${e}${manque > 1 ? "s" : ""}. ${d.nombreAlertes} alerte${d.nombreAlertes > 1 ? "s" : ""} à faire vérifier.`
             : `${d.elementsLiberes} ${unite}${d.elementsLiberes > 1 ? `s sont libéré${e}s` : ` est libéré${e}`}. ${palette ? (d.elementsLiberes > 1 ? "Ils se scannent" : "Il se scanne") : (d.elementsLiberes > 1 ? "Elles se scannent" : "Elle se scanne")} maintenant ${palette ? "seuls" : "une par une"}.`,
           lignes: [[palette ? "Palette" : "Carton", echapper(c.sscc), "serie"], ["Éléments libérés", String(d.elementsLiberes)], ["Manquants", String(manque)]],

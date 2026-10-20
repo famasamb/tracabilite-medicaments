@@ -93,4 +93,4 @@ def test_les_ecrans_de_l_agregation_sont_dans_l_application(client):
 
 def test_le_service_worker_change_de_version_pour_recharger_les_nouveaux_ecrans(client):
     sw = client.get(ADRESSE + "sw.js").text
-    assert 'const VERSION = "v22"' in sw
+    assert 'const VERSION = "v23"' in sw
