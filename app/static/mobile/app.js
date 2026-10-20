@@ -25,12 +25,12 @@ const PRINCIPALE = { fabricant: "expedition", grossisteRepartiteur: "reception",
 
 const OPERATIONS = {
   reception: {
-    titre: "Réception", icone: "reception", resume: "Scanner les unités qui arrivent",
+    titre: "Réception", icone: "reception", resume: "Cartons, palettes ou boîtes qui arrivent",
     succes: "Réception enregistrée", alerte: "Réception enregistrée, à vérifier",
     lien: "/evenements", consigne: "Cadrez le code DataMatrix de l'unité reçue",
   },
   expedition: {
-    titre: "Expédition", icone: "expedition", resume: "Scanner les unités qui partent",
+    titre: "Expédition", icone: "expedition", resume: "Cartons, palettes ou boîtes qui partent",
     succes: "Expédition enregistrée", alerte: "Expédition enregistrée, à vérifier",
     lien: "/evenements", consigne: "Cadrez le code DataMatrix de l'unité expédiée",
   },
@@ -321,8 +321,9 @@ function texteScan(e, op) {
   if (e.statut === 0) return { titre: "Serveur injoignable", texte: "Vérifiez votre connexion, puis réessayez." };
   if (/conteneur inconnu|aucun carton/i.test(d || "")) return { titre: "Carton inconnu", texte: "Aucun carton ni palette ne porte ce numéro (SSCC). Vérifiez l'étiquette." };
   if (/a ete ouvert|deja ouvert/i.test(d || "")) return { titre: "Carton déjà ouvert", texte: "Ce carton a été ouvert : scannez ses boîtes une par une." };
-  if (/pas chez vous/i.test(d || "")) return { titre: "Ce carton n'est pas chez vous", texte: "Seule la structure qui détient le carton peut l'ouvrir." };
-  if (/sur une palette/i.test(d || "")) return { titre: "Carton sur une palette", texte: "Ouvrez d'abord la palette." };
+  if (/pas chez vous/i.test(d || "")) return { titre: "Ce carton n'est pas chez vous", texte: "Seule la structure qui détient le carton ou la palette peut l'ouvrir ou l'expédier." };
+  if (/deja ete expedie/i.test(d || "")) return { titre: "Déjà expédié", texte: "Cet envoi a déjà été enregistré et n'a pas encore été reçu. Il ne peut pas être expédié de nouveau." };
+  if (/sur une palette/i.test(d || "")) return { titre: "Carton sur une palette", texte: "Scannez la palette, ou ouvrez-la d'abord." };
   if (/ce conteneur est vide/i.test(d || "")) return { titre: "Conteneur vide", texte: "Il ne contient plus aucune boîte." };
   if (/illisible/i.test(d)) return { titre: "Code illisible", texte: "Reprenez la photo en rapprochant le code, ou saisissez le numéro de série." };
   if (/inconnu|referencee/i.test(d)) return { titre: "Unité inconnue", texte: "Aucune unité sérialisée ne porte ce numéro. Vérifiez la provenance du produit." };
@@ -769,9 +770,10 @@ function vueReinitialiser(jeton) {
 function vueScanner(op) {
   const o = OPERATIONS[op];
   let flux = null, position = null, occupe = false, lampe = false;
-  // Boîte ou carton: la réception et l'expédition se font aussi d'un seul scan sur un carton ou une palette
+  // Boîte ou carton: la réception et l'expédition se font d'un seul scan sur un carton ou une palette (choix par défaut);
+  // le bouton Boîte reste disponible, et le dernier choix est gardé
   const peutBasculer = op === "reception" || op === "expedition";
-  let cible = op === "conteneur" || o.collecte === "conteneur" || (peutBasculer && etat.derniereCible === "conteneur") ? "conteneur" : "boite";
+  let cible = op === "conteneur" || o.collecte === "conteneur" || (peutBasculer && etat.derniereCible !== "boite") ? "conteneur" : "boite";
   const collecte = o.collecte || null;
   const lecturePure = op === "statut" || op === "conteneur" || Boolean(collecte);   // rien n'est enregistré par ce scan
   const consigneActuelle = () => (peutBasculer && cible === "conteneur" ? "Cadrez l'étiquette du carton ou de la palette" : o.consigne);

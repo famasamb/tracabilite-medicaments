@@ -45,6 +45,22 @@ def _expediee_par_une_autre_structure(db: Session, numero_serie: str, structure_
         Utilisateur.structure_id != structure_id).first() is not None
 
 
+def derniere_operation(db: Session, numero_serie: str) -> TypeOperation | None:
+    """Type du tout dernier evenement de l'unite (par date de l'operation), ou None si elle n'en a aucun."""
+    dernier = (db.query(Evenement).filter(Evenement.numeroSerie == numero_serie)
+               .order_by(Evenement.dateHeure.desc(), Evenement.id.desc()).first())
+    return dernier.typeOperation if dernier is not None else None
+
+
+def deja_expediee_en_attente(db: Session, numero_serie: str) -> bool:
+    """Vrai si l'unite a ete expediee et n'a pas encore ete recue: une nouvelle expedition n'a pas de sens
+    (comme en Europe, ou une operation n'est acceptee que depuis un etat valide)."""
+    return derniere_operation(db, numero_serie) == TypeOperation.expedition
+
+
+MESSAGE_DEJA_EXPEDIEE = ("Cette unite a deja ete expediee et n'a pas encore ete recue: "
+                         "elle ne peut pas etre expediee de nouveau.")
+
 MESSAGE_BOITE_HORS_CARTON = ("Enregistre avec une alerte: cette boite est encore dans un carton non ouvert, "
                             "ouvrez le carton d'abord, a verifier.")
 
@@ -59,6 +75,8 @@ def creer_evenement(db: Session, utilisateur: Utilisateur, unite: Unite, type_op
     Une boite scannee seule alors que son carton n'est pas ouvert leve aussi une alerte (agregation), sauf
     quand l'evenement vient du scan du carton lui-meme (par_conteneur).
     Renvoie l'evenement, le type d'anomalie (ou None) et le message."""
+    if type_operation == TypeOperation.expedition and deja_expediee_en_attente(db, unite.numeroSerie):
+        raise HTTPException(409, MESSAGE_DEJA_EXPEDIEE)
     evenement = Evenement(typeOperation=type_operation, latitude=latitude, longitude=longitude,
                           numeroSerie=unite.numeroSerie, utilisateur_id=utilisateur.id,
                           dateHeure=date_de_l_operation(date_heure), identifiantClient=identifiant_client)

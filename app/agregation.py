@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from .codes import cle_de_controle_gtin
 from .models import (Anomalie, Conteneur, Contenu, EtatConteneur, Evenement, NiveauConteneur, StatutUnite,
                      TypeAnomalie, TypeOperation, TypeStructure, Unite, Utilisateur, maintenant)
-from .routes_evenements import creer_evenement
+from .routes_evenements import creer_evenement, deja_expediee_en_attente
 
 TAILLE_MAX = 500   # elements au maximum dans un carton ou sur une palette
 
@@ -147,6 +147,16 @@ def enregistrer_pour_conteneur(db: Session, utilisateur: Utilisateur, conteneur:
         if deja:
             alertes = sum(1 for e in deja if e.anomalies)
             return len(deja), alertes, True, min(e.dateHeure for e in deja)
+
+    if db.query(Contenu.id).filter(Contenu.enfant_conteneur == conteneur.sscc, Contenu.dateRetrait.is_(None)).first():
+        raise HTTPException(409, "Ce carton est sur une palette: scannez la palette, ou ouvrez-la d'abord.")
+
+    if type_operation == TypeOperation.expedition:
+        if conteneur.structure_id != utilisateur.structure_id:
+            raise HTTPException(403, "Ce conteneur n'est pas chez vous: seule la structure qui le detient peut l'expedier.")
+        if any(deja_expediee_en_attente(db, numero) for numero in series):
+            raise HTTPException(409, "Ce conteneur a deja ete expedie et n'a pas encore ete recu: "
+                                     "il ne peut pas etre expedie de nouveau.")
 
     alertes = 0
     date_operation = None
