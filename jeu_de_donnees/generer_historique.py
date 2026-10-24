@@ -81,7 +81,7 @@ def main() -> None:
         for ville in sorted({v for _, _, v in OFFICINES}):
             r = client.post(f"/sr/{sr_par_ville[ville]}/responsable", headers=pna, json={
                 "nom": f"Chef SR {ville}", "fonction": "Pharmacien chef",
-                "identifiantConnexion": f"sr.{ville.lower(), "email": f"sr.{ville.lower() + "@essai.sn"}", "motDePasse": MOT_DE_PASSE})
+                "identifiantConnexion": f"sr.{ville.lower()}", "email": f"sr.{ville.lower()}@essai.sn", "motDePasse": MOT_DE_PASSE})
             assert r.status_code == 201, r.text
 
         # Le fabricant enregistre ses produits et serialise ses lots
