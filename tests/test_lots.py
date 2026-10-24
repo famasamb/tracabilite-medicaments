@@ -3,7 +3,7 @@ import io
 import zipfile
 from datetime import date, timedelta
 
-from app.codes import lire_code
+from app.services.codes import lire_code
 from tests.test_auth import inscrire, se_connecter
 
 PRODUIT = {"nom": "Paracetamol 500 mg", "composition": "Paracetamol 500 mg",
@@ -58,9 +58,9 @@ def test_produit_sans_gtin_utilise_lidentifiant_interne(client):
 
 
 def test_les_unites_sont_enregistrees_actives_et_uniques(client):
-    from app.db import get_db
+    from app.core.db import get_db
     from app.main import app as application
-    from app.models import Lot, StatutUnite
+    from app.domaine.models import Lot, StatutUnite
     entete, pid = preparer(client)
     client.post("/lots/serialisation", json=lot(pid, quantite=20), headers=entete)
     db = next(application.dependency_overrides[get_db]())
@@ -106,9 +106,9 @@ def test_quantite_invalide_refusee(client):
 def test_un_fabricant_ne_peut_pas_serialiser_le_produit_dun_autre(client):
     entete, pid = preparer(client)
     # un second fabricant est inscrit avec une autre reference de la base de test
-    from app.db import get_db
+    from app.core.db import get_db
     from app.main import app as application
-    from app.models import ReferenceAutorisation, TypeStructure
+    from app.domaine.models import ReferenceAutorisation, TypeStructure
     db = next(application.dependency_overrides[get_db]())
     db.add(ReferenceAutorisation(reference="TEST-FAB-002", nom="Autre labo", type=TypeStructure.fabricant))
     db.commit()

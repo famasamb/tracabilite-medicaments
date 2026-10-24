@@ -3,10 +3,10 @@ import io
 import zipfile
 from datetime import date, timedelta
 
-from app.codes import generer_image_code
-from app.db import get_db
+from app.services.codes import generer_image_code
+from app.core.db import get_db
 from app.main import app as application
-from app.models import Anomalie, Evenement, StatutUnite, Unite
+from app.domaine.models import Anomalie, Evenement, StatutUnite, Unite
 from tests.test_auth import inscrire, se_connecter
 
 PRODUIT = {"nom": "Paracetamol 500 mg", "composition": "Paracetamol 500 mg",

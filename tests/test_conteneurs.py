@@ -1,7 +1,7 @@
 """Tests de l'agregation, etape 1: composer un carton ou une palette (fiche de conception de l'agregation)."""
-from app.agregation import generer_sscc, sscc_valide
-from app.codes import lire_code
-from app.models import Contenu, Conteneur, EtatConteneur, ReferenceAutorisation, TypeStructure
+from app.services.agregation import generer_sscc, sscc_valide
+from app.services.codes import lire_code
+from app.domaine.models import Contenu, Conteneur, EtatConteneur, ReferenceAutorisation, TypeStructure
 from tests.test_evenements import connecte, inscrire_structure, serialiser, session
 
 
@@ -148,7 +148,7 @@ def test_un_contenu_a_un_seul_enfant(client):
 # ---------- Etape 2: scanner un carton ou une palette ----------
 
 def evenements(client):
-    from app.models import Evenement
+    from app.domaine.models import Evenement
     return session(client).query(Evenement).all()
 
 
@@ -199,7 +199,7 @@ def test_reception_sans_expedition_leve_une_alerte_par_boite(client):
     r = operer(client, gros, "reception", sscc)
     assert r.status_code == 201
     assert r.json()["nombreAlertes"] == 2 and r.json()["alerte"] is True
-    from app.models import Anomalie
+    from app.domaine.models import Anomalie
     anomalies = session(client).query(Anomalie).all()
     assert len(anomalies) == 2 and {a.typeAnomalie.value for a in anomalies} == {"ruptureSequence"}
 
@@ -271,7 +271,7 @@ def ouvrir_c(client, entete, sscc, presentes=None):
 
 
 def anomalies(client):
-    from app.models import Anomalie
+    from app.domaine.models import Anomalie
     return [a.typeAnomalie.value for a in session(client).query(Anomalie).all()]
 
 

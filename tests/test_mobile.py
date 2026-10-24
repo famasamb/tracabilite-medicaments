@@ -65,7 +65,7 @@ def test_chaque_ecran_appele_par_l_application_est_defini(client):
 
 
 def test_les_references_d_essai_permettent_l_inscription(client, db):
-    from app.references import charger_references
+    from app.services.references import charger_references
     assert charger_references(db, "data/references_essai.csv") == 4
     assert charger_references(db, "data/references_essai.csv") == 0
 

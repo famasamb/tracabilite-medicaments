@@ -4,7 +4,7 @@ from datetime import date
 import pytest
 from sqlalchemy.exc import IntegrityError
 
-from app.models import (Structure, Utilisateur, Produit, Lot, Unite, Evenement,
+from app.domaine.models import (Structure, Utilisateur, Produit, Lot, Unite, Evenement,
                         Anomalie, TypeStructure, Role, StatutUnite,
                         TypeOperation, TypeAnomalie)
 

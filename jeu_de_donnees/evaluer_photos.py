@@ -15,9 +15,9 @@ import time
 from collections import defaultdict
 from pathlib import Path
 
-from app.lecture import (CLASSIQUE, lire_code, lire_hybride, lire_zone,
+from app.ia.lecture import (CLASSIQUE, lire_code, lire_hybride, lire_zone,
                          localiseur_disponible)
-from app.routes_evenements import extraire_numero_serie
+from app.services.evenements import extraire_numero_serie
 
 DOSSIER = Path(__file__).parent
 PHOTOS = DOSSIER / "photos_reelles"

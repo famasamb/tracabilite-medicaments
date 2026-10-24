@@ -3,7 +3,7 @@ from datetime import date
 
 import pytest
 
-from app.codes import (ALPHABET, LONGUEUR_SERIE, cle_de_controle_gtin, construire_contenu,
+from app.services.codes import (ALPHABET, LONGUEUR_SERIE, cle_de_controle_gtin, construire_contenu,
                        generer_image_code, generer_numeros_serie, gtin_valide, lire_code)
 
 GTIN = "0340093000012" + str(cle_de_controle_gtin("0340093000012"))  # GTIN-14 valide
@@ -74,5 +74,5 @@ def test_le_texte_sous_le_code_ne_gene_pas_la_lecture_et_porte_le_numero_de_seri
     sans, avec = generer_image_code(contenu), generer_image_code(contenu, avec_texte=True)
     assert lire_code(avec) == contenu
     assert len(avec) > len(sans)  # la marge de texte ajoute des lignes a l'image
-    from app.codes import _lignes_lisibles
+    from app.services.codes import _lignes_lisibles
     assert _lignes_lisibles(contenu) == ["(01)03400930000021", "(17)301231", "(10)LOT-001", "(21)ABC123DEF456"]

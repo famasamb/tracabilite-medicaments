@@ -1,5 +1,5 @@
 """Tests du cas Enregistrer les informations d'un produit."""
-from app.codes import cle_de_controle_gtin
+from app.services.codes import cle_de_controle_gtin
 from tests.test_auth import inscrire, se_connecter
 
 PRODUIT = {"nom": "Paracetamol 500 mg", "composition": "Paracetamol 500 mg",
@@ -84,9 +84,9 @@ def test_recherche_par_nom_et_par_gtin(client):
 
 
 def test_la_recherche_ne_montre_que_les_produits_de_son_laboratoire(client):
-    from app.db import get_db
+    from app.core.db import get_db
     from app.main import app as application
-    from app.models import ReferenceAutorisation, TypeStructure
+    from app.domaine.models import ReferenceAutorisation, TypeStructure
     inscrire(client)
     client.post("/produits", json=PRODUIT, headers=connecte(client))
     db = next(application.dependency_overrides[get_db]())

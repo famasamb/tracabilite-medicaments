@@ -4,10 +4,10 @@ from datetime import timedelta
 
 from sqlalchemy import create_engine, inspect, text
 
-from app.db import Base, get_db
+from app.core.db import Base, get_db
 from app.main import app as application
-from app.migration import mettre_a_niveau
-from app.models import JetonReinitialisation, Utilisateur, maintenant
+from app.core.migration import mettre_a_niveau
+from app.domaine.models import JetonReinitialisation, Utilisateur, maintenant
 from tests.test_auth import inscrire, se_connecter
 
 EMAIL = "awa.diop@essai.sn"
@@ -191,7 +191,7 @@ def test_migration_d_une_ancienne_base_sans_perdre_les_comptes():
 
 
 # ---------- Envoi reel (SMTP simule) ----------
-from app import courriel as _courriel  # noqa: E402
+from app.services import courriel as _courriel  # noqa: E402
 
 ENVOYER_POUR_DE_VRAI = _courriel.envoyer   # la fixture automatique remplace la fonction pendant les tests
 

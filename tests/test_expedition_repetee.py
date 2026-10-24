@@ -1,6 +1,6 @@
 """Expedition repetee: une unite ou un conteneur deja expedie (pas encore recu) ne peut pas l'etre de nouveau,
 et seule la structure qui detient un conteneur peut l'expedier."""
-from app.models import Evenement
+from app.domaine.models import Evenement
 from tests.test_conteneurs import circuit, composer, evenements, operer
 from tests.test_evenements import inscrire_structure, serialiser
 

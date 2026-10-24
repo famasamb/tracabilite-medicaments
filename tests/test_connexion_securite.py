@@ -40,7 +40,7 @@ def test_le_blocage_ne_touche_pas_les_autres_comptes(client):
 
 def test_le_blocage_prend_fin_apres_quinze_minutes(client, monkeypatch):
     from datetime import timedelta
-    from app import routes_auth
+    from app.api import auth as routes_auth
     from tests.test_auth import inscrire, se_connecter
     inscrire(client)
     _echecs(client, 5)

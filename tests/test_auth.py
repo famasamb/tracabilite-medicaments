@@ -1,8 +1,8 @@
 """Tests du cas S'authentifier (fiche 1)."""
 from datetime import timedelta
 
-from app.auth import creer_jeton
-from app.models import Role, Utilisateur
+from app.core.auth import creer_jeton
+from app.domaine.models import Role, Utilisateur
 
 
 def inscrire(client, identifiant="awa.diop", mdp="MotDePasse2026"):

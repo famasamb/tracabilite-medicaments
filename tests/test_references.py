@@ -1,6 +1,6 @@
 """Tests de la base de reference des autorisations."""
-from app.models import ReferenceAutorisation, TypeStructure
-from app.references import charger_references, trouver_reference
+from app.domaine.models import ReferenceAutorisation, TypeStructure
+from app.services.references import charger_references, trouver_reference
 
 
 def ecrire_csv(tmp_path):

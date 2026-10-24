@@ -1,5 +1,5 @@
 """Tests du cas Consulter le statut d'une unite (fiche 9)."""
-from app.models import Evenement, ReferenceAutorisation, TypeStructure
+from app.domaine.models import Evenement, ReferenceAutorisation, TypeStructure
 from tests.test_evenements import inscrire_structure, serialiser, session
 
 

@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import pytest
 
-from app.codes import generer_image_code
+from app.services.codes import generer_image_code
 from jeu_de_donnees.composition import composer_boite
 from jeu_de_donnees.degradations import flouter
 from jeu_de_donnees.evaluation import methode_classique

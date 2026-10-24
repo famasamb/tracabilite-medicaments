@@ -20,12 +20,12 @@ os.environ["DATABASE_URL"] = f"sqlite:///{(DOSSIER / 'historique.db').as_posix()
 import numpy as np  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
-from app.codes import cle_de_controle_gtin  # noqa: E402
-from app.db import SessionLocal  # noqa: E402
+from app.services.codes import cle_de_controle_gtin  # noqa: E402
+from app.core.db import SessionLocal  # noqa: E402
 from app.main import app  # noqa: E402
-from app.models import (Evenement, Lot, Produit, StatutUnite, Structure, TypeOperation,  # noqa: E402
+from app.domaine.models import (Evenement, Lot, Produit, StatutUnite, Structure, TypeOperation,  # noqa: E402
                         Unite, Utilisateur, new_id)
-from app.references import charger_references  # noqa: E402
+from app.services.references import charger_references  # noqa: E402
 
 from .geographie import VILLES  # noqa: E402
 from .simulation import Acteur, simuler_historique  # noqa: E402

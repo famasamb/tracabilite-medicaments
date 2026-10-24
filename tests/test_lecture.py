@@ -2,9 +2,9 @@
 import cv2
 import numpy as np
 
-from app import lecture
-from app.codes import generer_image_code, lire_code
-from app.lecture import CLASSIQUE, DEEP_LEARNING, Lecture, lire_hybride, lire_zone
+from app.ia import lecture
+from app.services.codes import generer_image_code, lire_code
+from app.ia.lecture import CLASSIQUE, DEEP_LEARNING, Lecture, lire_hybride, lire_zone
 from jeu_de_donnees.composition import composer_boite
 from jeu_de_donnees.degradations import flouter
 from tests.test_evenements import serialiser

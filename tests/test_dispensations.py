@@ -1,5 +1,5 @@
 """Tests du cas Enregistrer la dispensation (fiche 8)."""
-from app.models import Anomalie, Evenement, ReferenceAutorisation, StatutUnite, TypeStructure, Unite
+from app.domaine.models import Anomalie, Evenement, ReferenceAutorisation, StatutUnite, TypeStructure, Unite
 from tests.test_evenements import connecte, inscrire_structure, serialiser, session
 
 

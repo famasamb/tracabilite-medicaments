@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import pytest
 
-from app.codes import generer_image_code
+from app.services.codes import generer_image_code
 from jeu_de_donnees import evaluer_photos as ep
 
 

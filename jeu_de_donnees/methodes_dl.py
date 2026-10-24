@@ -9,7 +9,7 @@
 from pathlib import Path
 from typing import Callable
 
-from app.lecture import (Boite, CONFIANCE_MIN, Localiseur, MARGE, MODELE, TAILLE_YOLO,  # noqa: F401
+from app.ia.lecture import (Boite, CONFIANCE_MIN, Localiseur, MARGE, MODELE, TAILLE_YOLO,  # noqa: F401
                          lire_zone, localiseur_yolo, recadrer)
 
 from .evaluation import Methode

@@ -1,0 +1,132 @@
+"""Enregistrement d'une reception ou d'une expedition (fiche 7): regles metier, sans rien savoir d'HTTP."""
+import logging
+import re
+from datetime import datetime
+
+from sqlalchemy.orm import Session
+from starlette.concurrency import run_in_threadpool
+
+from app.domaine.models import (Anomalie, Evenement, StatutUnite, TypeAnomalie, TypeOperation,
+                                TypeStructure, Unite, Utilisateur)
+from app.ia.lecture import lire_hybride
+from app.services.contenant import conteneur_actif_de_la_boite
+from app.services.erreurs import ErreurMetier
+from app.services.horsligne import date_de_l_operation
+
+journal = logging.getLogger("tracabilite.lecture")
+
+TAILLE_MAX_IMAGE = 5 * 1024 * 1024  # 5 Mo
+
+# Qui peut faire quoi (acteurs de la fiche 7)
+OPERATIONS_AUTORISEES = {
+    TypeStructure.fabricant: {TypeOperation.expedition},
+    TypeStructure.grossisteRepartiteur: {TypeOperation.reception, TypeOperation.expedition},
+    TypeStructure.SR: {TypeOperation.reception, TypeOperation.expedition},
+    TypeStructure.officine: {TypeOperation.reception},
+}
+
+
+def extraire_numero_serie(texte: str) -> str | None:
+    """Dans le texte d'un code GS1, ex. (01)...(17)...(10)...(21)ABC123, renvoie la valeur de (21)."""
+    trouve = re.search(r"\(21\)([^()]+)", texte)
+    return trouve.group(1) if trouve else None
+
+
+def _expediee_par_une_autre_structure(db: Session, numero_serie: str, structure_id: str) -> bool:
+    """Vrai si l'historique de l'unite contient une expedition faite par une autre structure que celle-ci."""
+    return db.query(Evenement).join(Utilisateur, Evenement.utilisateur_id == Utilisateur.id).filter(
+        Evenement.numeroSerie == numero_serie,
+        Evenement.typeOperation == TypeOperation.expedition,
+        Utilisateur.structure_id != structure_id).first() is not None
+
+
+def derniere_operation(db: Session, numero_serie: str) -> TypeOperation | None:
+    """Type du tout dernier evenement de l'unite (par date de l'operation), ou None si elle n'en a aucun."""
+    dernier = (db.query(Evenement).filter(Evenement.numeroSerie == numero_serie)
+               .order_by(Evenement.dateHeure.desc(), Evenement.id.desc()).first())
+    return dernier.typeOperation if dernier is not None else None
+
+
+def deja_expediee_en_attente(db: Session, numero_serie: str) -> bool:
+    """Vrai si l'unite a ete expediee et n'a pas encore ete recue: une nouvelle expedition n'a pas de sens
+    (comme en Europe, ou une operation n'est acceptee que depuis un etat valide)."""
+    return derniere_operation(db, numero_serie) == TypeOperation.expedition
+
+
+MESSAGE_DEJA_EXPEDIEE = ("Cette unite a deja ete expediee et n'a pas encore ete recue: "
+                         "elle ne peut pas etre expediee de nouveau.")
+
+MESSAGE_BOITE_HORS_CARTON = ("Enregistre avec une alerte: cette boite est encore dans un carton non ouvert, "
+                            "ouvrez le carton d'abord, a verifier.")
+
+
+def creer_evenement(db: Session, utilisateur: Utilisateur, unite: Unite, type_operation: TypeOperation,
+                    latitude: float | None, longitude: float | None, date_heure: datetime | None,
+                    identifiant_client: str | None, par_conteneur: bool = False) -> tuple[Evenement, TypeAnomalie | None, str]:
+    """Ajoute a la session l'evenement d'une unite et, si besoin, son alerte (sans valider la transaction).
+
+    Les regles sont celles de la fiche 7: unite deja desactivee (variante 3b), ou reception d'une unite
+    qu'aucune autre structure n'a expediee (rupture de sequence). L'evenement est toujours garde.
+    Une boite scannee seule alors que son carton n'est pas ouvert leve aussi une alerte (agregation), sauf
+    quand l'evenement vient du scan du carton lui-meme (par_conteneur).
+    Renvoie l'evenement, le type d'anomalie (ou None) et le message."""
+    if type_operation == TypeOperation.expedition and deja_expediee_en_attente(db, unite.numeroSerie):
+        raise ErreurMetier(409, MESSAGE_DEJA_EXPEDIEE)
+    evenement = Evenement(typeOperation=type_operation, latitude=latitude, longitude=longitude,
+                          numeroSerie=unite.numeroSerie, utilisateur_id=utilisateur.id,
+                          dateHeure=date_de_l_operation(date_heure), identifiantClient=identifiant_client)
+    db.add(evenement)
+    type_anomalie = None
+    if unite.statut == StatutUnite.desactivee:
+        type_anomalie = TypeAnomalie.reutilisationIdentifiant
+        message = "Enregistre avec une alerte: identifiant deja desactive, a verifier."
+    elif (type_operation == TypeOperation.reception
+          and not _expediee_par_une_autre_structure(db, unite.numeroSerie, utilisateur.structure_id)):
+        type_anomalie = TypeAnomalie.ruptureSequence
+        message = "Enregistre avec une alerte: aucune expedition de cette unite dans l'historique, a verifier."
+    else:
+        message = "Evenement enregistre."
+    if type_anomalie is not None:
+        db.add(Anomalie(typeAnomalie=type_anomalie, score=1.0, evenement=evenement))
+    if not par_conteneur:
+        carton = conteneur_actif_de_la_boite(db, unite.numeroSerie)
+        if carton is not None:
+            db.add(Anomalie(typeAnomalie=TypeAnomalie.boiteHorsCarton, score=1.0, evenement=evenement))
+            if type_anomalie is None:
+                type_anomalie = TypeAnomalie.boiteHorsCarton
+                message = MESSAGE_BOITE_HORS_CARTON
+    return evenement, type_anomalie, message
+
+
+async def identifier_unite(db: Session, contenu_image: bytes | None, numero_serie: str | None) -> Unite:
+    """Lit le code sur l'image (methode classique, puis deep learning); si elle echoue, utilise la saisie manuelle.
+
+    Renvoie l'unite trouvee dans la base centrale, ou refuse la requete avec un message clair.
+    """
+    saisie = numero_serie.strip() if numero_serie else None
+    identifiant = None
+    methode = None
+    if contenu_image is not None:
+        lecture = await run_in_threadpool(lire_hybride, contenu_image)   # classique, puis deep learning si besoin
+        identifiant = extraire_numero_serie(lecture.texte) if lecture.texte else None
+        methode = lecture.methode if identifiant else None
+        journal.info("Lecture du code: %s", methode or "echec")
+    if identifiant is None:
+        identifiant = saisie
+        methode = "saisie" if saisie else None
+    if identifiant is None:
+        if contenu_image is None:
+            raise ErreurMetier(422, "Envoyez l'image du code ou saisissez le numero de serie.")
+        raise ErreurMetier(422, "Code illisible. Reprenez la photo ou saisissez le numero de serie.")
+
+    unite = db.get(Unite, identifiant)
+    if unite is None:
+        raise ErreurMetier(404, "Identifiant inconnu: aucune unite serialisee avec ce numero.")
+    unite.methode_lecture = methode   # information de la requete en cours, non enregistree en base
+    return unite
+
+
+def verifier_droit_operation(utilisateur: Utilisateur, type_operation: TypeOperation) -> None:
+    """Refuse (403) une operation que le type de structure de l'utilisateur n'a pas le droit de faire."""
+    if type_operation not in OPERATIONS_AUTORISEES.get(utilisateur.structure.type, set()):
+        raise ErreurMetier(403, "Votre structure n'est pas autorisee a enregistrer cette operation.")

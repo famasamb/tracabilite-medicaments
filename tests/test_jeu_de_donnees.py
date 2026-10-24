@@ -2,7 +2,7 @@
 import cv2
 import numpy as np
 
-from app.codes import generer_image_code, lire_code
+from app.services.codes import generer_image_code, lire_code
 from jeu_de_donnees.composition import HAUTEUR, LARGEUR, composer_boite
 from jeu_de_donnees.degradations import flouter, occulter
 

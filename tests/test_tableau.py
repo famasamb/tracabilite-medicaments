@@ -1,7 +1,7 @@
 """Tests du cas Consulter le tableau de bord du circuit public (fiche 10)."""
 from datetime import datetime, timedelta, timezone
 
-from app.models import StatutUnite, Unite
+from app.domaine.models import StatutUnite, Unite
 from tests.test_evenements import connecte, inscrire_structure, serialiser, session
 
 AUJOURDHUI = datetime.now(timezone.utc).date()
@@ -114,7 +114,7 @@ def test_pna_sans_activite(client):
 
 
 def test_la_consultation_ne_modifie_rien(client):
-    from app.models import Anomalie, Evenement
+    from app.domaine.models import Anomalie, Evenement
     pna, _, _, _ = scenario(client)
     db = session(client)
     avant = (db.query(Evenement).count(), db.query(Anomalie).count())

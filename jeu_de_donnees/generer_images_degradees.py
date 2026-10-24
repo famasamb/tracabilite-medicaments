@@ -10,7 +10,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from app.codes import lire_code
+from app.services.codes import lire_code
 
 from .degradations import flouter, occulter
 

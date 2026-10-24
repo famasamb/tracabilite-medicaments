@@ -1,5 +1,5 @@
 """Tests du cas Creer compte pharmacien chef de SR (fiche 4) et de la creation des SR."""
-from app.models import Structure, TypeStructure
+from app.domaine.models import Structure, TypeStructure
 from tests.test_evenements import connecte, inscrire_structure, serialiser, session
 
 CHEF = {"nom": "Awa Ndiaye", "fonction": "Pharmacien chef", "identifiantConnexion": "chef.dakar", "email": "chef.dakar" + "@essai.sn",

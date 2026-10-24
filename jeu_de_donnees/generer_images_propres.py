@@ -23,11 +23,11 @@ import cv2  # noqa: E402
 import numpy as np  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
-from app.codes import cle_de_controle_gtin, construire_contenu, lire_code  # noqa: E402
-from app.db import SessionLocal  # noqa: E402
+from app.services.codes import cle_de_controle_gtin, construire_contenu, lire_code  # noqa: E402
+from app.core.db import SessionLocal  # noqa: E402
 from app.main import app  # noqa: E402
-from app.models import Unite  # noqa: E402
-from app.references import charger_references  # noqa: E402
+from app.domaine.models import Unite  # noqa: E402
+from app.services.references import charger_references  # noqa: E402
 
 from .composition import HAUTEUR, LARGEUR, composer_boite  # noqa: E402
 

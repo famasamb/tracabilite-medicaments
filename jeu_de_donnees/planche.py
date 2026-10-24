@@ -2,7 +2,7 @@
 import cv2
 import numpy as np
 
-from app.codes import generer_image_code
+from app.services.codes import generer_image_code
 
 LARGEUR, HAUTEUR = 2480, 3508       # A4 a 300 points par pouce
 MARGE = 150

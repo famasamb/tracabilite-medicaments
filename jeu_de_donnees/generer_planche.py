@@ -16,9 +16,9 @@ os.environ["DATABASE_URL"] = f"sqlite:///{(DOSSIER / 'donnees.db').as_posix()}"
 import numpy as np  # noqa: E402
 from PIL import Image  # noqa: E402
 
-from app.codes import construire_contenu  # noqa: E402
-from app.db import SessionLocal  # noqa: E402
-from app.models import Lot, Produit, Unite  # noqa: E402
+from app.services.codes import construire_contenu  # noqa: E402
+from app.core.db import SessionLocal  # noqa: E402
+from app.domaine.models import Lot, Produit, Unite  # noqa: E402
 
 from .planche import composer_planche  # noqa: E402
 

@@ -16,8 +16,8 @@ from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from app.models import TypeAnomalie
-from app.moteur_anomalies import (DISTANCE_MIN_KM, VITESSE_MAX_KMH, Detection, analyser_base,
+from app.domaine.models import TypeAnomalie
+from app.ia.anomalies import (DISTANCE_MIN_KM, VITESSE_MAX_KMH, Detection, analyser_base,
                                   charger_operations, etapes)
 
 DOSSIER = Path(__file__).parent

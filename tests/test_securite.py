@@ -1,7 +1,7 @@
 """Tests du hachage des mots de passe."""
 import pytest
 
-from app.securite import hacher_mot_de_passe, verifier_mot_de_passe
+from app.core.securite import hacher_mot_de_passe, verifier_mot_de_passe
 
 
 def test_le_bon_mot_de_passe_est_accepte():

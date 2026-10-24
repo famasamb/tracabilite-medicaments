@@ -1,8 +1,8 @@
 """Tests des alertes regroupees: la concentration est une seule alerte, les autres anomalies restent une par une."""
 from datetime import date, timedelta
 
-from app.alertes import alertes_regroupees
-from app.models import (Anomalie, Evenement, Lot, ReferenceAutorisation, TypeAnomalie, TypeOperation, TypeStructure,
+from app.ia.alertes import alertes_regroupees
+from app.domaine.models import (Anomalie, Evenement, Lot, ReferenceAutorisation, TypeAnomalie, TypeOperation, TypeStructure,
                         Unite, Utilisateur)
 from tests.test_evenements import inscrire_structure, serialiser, session
 

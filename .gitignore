@@ -247,3 +247,21 @@ essai_telephone.db
 images_essai
 tracabilite_sauvegarde.db
 installer_*.py
+# Environnement et caches Python
+.venv/
+*.pyc
+# Bases de donnees locales (celles de jeu_de_donnees/ sont des jeux de donnees, elles restent suivies)
+/*.db
+*.db-wal
+*.db-shm
+# Fichiers d'essai generes par les scripts de outils/
+codes_essai/
+sauvegardes/
+images_essai/
+# Poids de depart de YOLO, retelecharges automatiquement par ultralytics
+yolov8n.pt
+# Editeurs
+.idea/
+
+# Archives (sauvegardes de jeux de donnees, a garder hors du depot)
+*.zip

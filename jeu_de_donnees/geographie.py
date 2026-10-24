@@ -1,5 +1,5 @@
 """Positions des villes du Senegal pour simuler les deplacements (valeurs approchees du centre-ville)."""
-from app.geo import distance_km  # noqa: F401  (le calcul vit dans l'application, le jeu de donnees le reutilise)
+from app.ia.geo import distance_km  # noqa: F401  (le calcul vit dans l'application, le jeu de donnees le reutilise)
 
 # (latitude, longitude). Les noms sont ceux de la colonne `localisation` de data/sr_a_verifier.csv.
 VILLES = {

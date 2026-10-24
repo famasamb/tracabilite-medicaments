@@ -2,8 +2,8 @@
 import time
 from datetime import datetime, timedelta
 
-from app.models import Anomalie, TypeAnomalie, TypeOperation, TypeStructure, Unite
-from app.moteur_anomalies import (DISTANCE_MIN_KM, LOTS_MIN, VITESSE_MAX_KMH, Z_MAX, Detection, Operation,
+from app.domaine.models import Anomalie, TypeAnomalie, TypeOperation, TypeStructure, Unite
+from app.ia.anomalies import (DISTANCE_MIN_KM, LOTS_MIN, VITESSE_MAX_KMH, Z_MAX, Detection, Operation,
                                   analyser_base, analyser_unite, charger_operations, detecter_concentrations,
                                   enregistrer, est_trajet_inhabituel, lancer_analyse, score_concentration)
 from jeu_de_donnees.evaluer_anomalies import comparer, groupes

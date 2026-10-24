@@ -3,8 +3,8 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import create_engine, inspect, text
 
-from app.migration import mettre_a_niveau
-from app.models import Anomalie, Evenement, maintenant
+from app.core.migration import mettre_a_niveau
+from app.domaine.models import Anomalie, Evenement, maintenant
 from tests.test_dispensations import preparer
 from tests.test_evenements import inscrire_structure, serialiser, session
 

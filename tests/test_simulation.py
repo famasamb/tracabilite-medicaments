@@ -3,8 +3,8 @@ from datetime import datetime
 
 import numpy as np
 
-from app.models import TypeOperation, TypeStructure
-from app.routes_evenements import OPERATIONS_AUTORISEES
+from app.domaine.models import TypeOperation, TypeStructure
+from app.services.evenements import OPERATIONS_AUTORISEES
 from jeu_de_donnees.geographie import VILLES, distance_km
 from jeu_de_donnees.simulation import Acteur, simuler_historique
 

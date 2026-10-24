@@ -1,6 +1,6 @@
 """Rupture de sequence a la reception: une unite recue sans que personne d'autre ne l'ait expediee."""
-from app.models import Anomalie, StatutUnite, TypeOperation, Unite
-from app.moteur_anomalies import Operation, analyser_unite
+from app.domaine.models import Anomalie, StatutUnite, TypeOperation, Unite
+from app.ia.anomalies import Operation, analyser_unite
 from tests.test_evenements import inscrire_structure, serialiser, session
 from tests.test_moteur_anomalies import RUPTURE, op, types
 

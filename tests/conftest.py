@@ -6,9 +6,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 os.environ["TRACABILITE_SANS_ENV"] = "1"   # les tests ignorent le fichier .env (secrets, vraie base)
-from app.db import Base, get_db
+from app.core.db import Base, get_db
 from app.main import app as application
-from app.references import charger_references
+from app.services.references import charger_references
 
 
 def _moteur_en_memoire():
@@ -20,7 +20,7 @@ def _moteur_en_memoire():
 def courriels(monkeypatch):
     """Aucun courriel n'est envoye pendant les tests: ils sont ranges dans cette liste."""
     envoyes = []
-    monkeypatch.setattr("app.courriel.envoyer", lambda destinataire, sujet, texte: envoyes.append(
+    monkeypatch.setattr("app.services.courriel.envoyer", lambda destinataire, sujet, texte: envoyes.append(
         {"a": destinataire, "sujet": sujet, "texte": texte}))
     return envoyes
 

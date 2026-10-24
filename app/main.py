@@ -3,22 +3,24 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from .db import engine
-from .migration import mettre_a_niveau
-from .routes_auth import router as routeur_auth
-from .routes_employes import router as routeur_employes
-from .routes_lots import router as routeur_lots
-from .routes_sr import router as routeur_sr
-from .routes_tableau import router as routeur_tableau
-from .routes_unites import router as routeur_unites
-from .routes_produits import router as routeur_produits
-from .routes_dispensations import router as routeur_dispensations
-from .routes_evenements import router as routeur_evenements
-from .routes_inscription import router as routeur_inscription
-from .routes_conteneurs import router as routeur_conteneurs
-from . import models  # noqa: F401  (charge les classes pour creer les tables)
+from app.core.db import engine
+from app.core.migration import mettre_a_niveau
+from app.api.auth import router as routeur_auth
+from app.api.employes import router as routeur_employes
+from app.api.lots import router as routeur_lots
+from app.api.sr import router as routeur_sr
+from app.api.tableau import router as routeur_tableau
+from app.api.unites import router as routeur_unites
+from app.api.produits import router as routeur_produits
+from app.api.dispensations import router as routeur_dispensations
+from app.api.evenements import router as routeur_evenements
+from app.api.inscription import router as routeur_inscription
+from app.api.conteneurs import router as routeur_conteneurs
+from app.services.erreurs import ErreurMetier
+from app.domaine import models  # noqa: F401  (charge les classes pour creer les tables)
 
 
 @asynccontextmanager
@@ -34,6 +36,12 @@ app = FastAPI(
     version="0.1.0",
     lifespan=demarrage,
 )
+
+@app.exception_handler(ErreurMetier)
+async def erreur_metier(requete: Request, erreur: ErreurMetier):
+    """Une regle metier refuse l'operation: meme reponse qu'une erreur HTTP classique."""
+    return JSONResponse({"detail": erreur.detail}, status_code=erreur.status_code)
+
 
 # En-tetes de securite sur toutes les reponses. La politique de contenu (CSP) ne concerne que l'application
 # mobile: elle n'accepte que des ressources de sa propre adresse. La camera et la position restent permises.

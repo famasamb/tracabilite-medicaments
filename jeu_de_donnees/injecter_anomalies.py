@@ -27,9 +27,9 @@ os.environ["DATABASE_URL"] = f"sqlite:///{COPIE.as_posix()}"
 import numpy as np  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
-from app.db import SessionLocal  # noqa: E402
+from app.core.db import SessionLocal  # noqa: E402
 from app.main import app  # noqa: E402
-from app.models import (Evenement, StatutUnite, Structure, TypeOperation, Unite,  # noqa: E402
+from app.domaine.models import (Evenement, StatutUnite, Structure, TypeOperation, Unite,  # noqa: E402
                         Utilisateur, new_id)
 
 from .anomalies import injecter_reutilisations, injecter_ruptures, injecter_trajets  # noqa: E402

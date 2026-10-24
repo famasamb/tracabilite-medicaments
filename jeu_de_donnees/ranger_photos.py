@@ -53,8 +53,8 @@ def main(argv: list[str]) -> None:
     sortie = PHOTOS / condition
     sortie.mkdir(parents=True, exist_ok=True)
     print(f"Condition '{condition}': {len(plan)} photos")
-    from app.codes import lire_code   # import tardif: garde ce module leger pour les tests
-    from app.routes_evenements import extraire_numero_serie
+    from app.services.codes import lire_code   # import tardif: garde ce module leger pour les tests
+    from app.services.evenements import extraire_numero_serie
     decalees = 0
     for photo, serie, passage in plan:
         cible = sortie / f"{serie}__{passage}{photo.suffix.lower()}"

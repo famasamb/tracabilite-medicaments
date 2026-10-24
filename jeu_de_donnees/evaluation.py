@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-from app.codes import lire_code
+from app.services.codes import lire_code
 
 Methode = Callable[[bytes], str | None]
 
